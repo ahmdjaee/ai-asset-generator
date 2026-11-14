@@ -1,0 +1,125 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "streamdown/styles.css" layer(components);
+@import "./tokens.css";
+
+/* Kelas Tailwind yang dipakai di dalam komponen streamdown ikut dipindai. */
+@source "../../node_modules/streamdown/dist/*.js";
+
+@layer base {
+  body {
+    @apply bg-bg-app font-sans text-body text-text-primary antialiased;
+  }
+
+  /* Tailwind v4 memakai currentColor untuk border; app ini memakai token border/default. */
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border-default);
+  }
+
+  /*
+   * Satu-satunya cincin fokus app (FigCraft: 2 px `accent-ring`, jarak 2). Komponen hanya mengubah jaraknya
+   * (`focus-visible:outline-offset-1`). Jangan memberi `outline-none` pada elemen interaktif: di Tailwind 4 kelas itu
+   * mengisi `--tw-outline-style: none`, sehingga `focus-visible:outline-2` pun tidak menggambar apa-apa. Tes E2E
+   * `focusRingProblems` memeriksa setiap pemberhentian Tab.
+   */
+  :focus-visible {
+    outline: 2px solid var(--color-accent-ring);
+    outline-offset: 2px;
+  }
+}
+
+/*
+ * Markdown dari Claude (`web/components/Markdown.tsx`). Kelas ukuran streamdown (`text-3xl`, `text-sm`, …) tidak ada di
+ * app ini (`--text-*: initial`), jadi elemennya dipetakan ke text style FigCraft lewat atribut `data-streamdown`.
+ */
+@layer components {
+  .markdown > :first-child {
+    margin-top: 0;
+  }
+  .markdown > :last-child {
+    margin-bottom: 0;
+  }
+  .markdown [data-streamdown^="heading-"] {
+    @apply mt-4 mb-1 text-heading text-text-primary;
+  }
+  .markdown [data-streamdown="heading-4"],
+  .markdown [data-streamdown="heading-5"],
+  .markdown [data-streamdown="heading-6"] {
+    @apply text-label;
+  }
+  .markdown [data-streamdown="strong"] {
+    @apply font-semibold;
+  }
+  .markdown [data-streamdown="inline-code"] {
+    @apply rounded-sm bg-bg-active px-1 py-px font-mono text-small;
+  }
+  .markdown [data-streamdown="code-block"] {
+    @apply my-2 overflow-hidden rounded-lg border border-border-default bg-bg-raised;
+  }
+  .markdown [data-streamdown="code-block-header"] {
+    @apply text-caption text-text-tertiary;
+  }
+  .markdown [data-streamdown="code-block-body"] {
+    @apply overflow-x-auto font-mono text-small;
+  }
+  .markdown [data-streamdown="link"] {
+    @apply text-accent-text underline underline-offset-2;
+  }
+  .markdown [data-streamdown="blockquote"] {
+    @apply my-2 border-l-2 border-border-default pl-3 text-text-secondary;
+  }
+  .markdown [data-streamdown="table-wrapper"] {
+    @apply my-2 overflow-x-auto;
+  }
+  .markdown [data-streamdown="table"] {
+    @apply text-small;
+  }
+  .markdown [data-streamdown="horizontal-rule"] {
+    @apply my-3 border-border-default;
+  }
+}
+
+/*
+ * Toast sonner (`<li tabindex=0>`) bisa difokus, tetapi gaya sonner (tanpa layer, disisipkan setelah stylesheet ini)
+ * memberi `outline: 0` dan bayangan rgba mentah yang tidak terlihat di tema gelap. Selektor lebih spesifik di luar
+ * layer supaya cincin fokus app yang berlaku; radius sama dengan kartu toast.
+ */
+[data-sonner-toaster] [data-sonner-toast] {
+  border-radius: var(--radius-lg);
+}
+
+[data-sonner-toaster] [data-sonner-toast]:focus-visible {
+  outline: 2px solid var(--color-accent-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+/*
+ * Turntable kartu aset (`web/components/AssetCard.tsx`): strip frame berjajar digeser dari frame pertama (0%) ke
+ * terakhir (100%) dengan `steps(<jumlah frame>, jump-none)`, jadi setiap frame tampil sama lama lalu kembali ke awal.
+ */
+@keyframes turntable {
+  from {
+    background-position: 0% 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
+/*
+ * Hormati preferensi sistem: animasi dan transisi hampir dimatikan. Aturan ini sengaja di luar @layer, sehingga
+ * menang atas semua kelas Tailwind dan gaya streamdown (yang dimasukkan ke layer components) tanpa !important.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms;
+    animation-iteration-count: 1;
+    transition-duration: 0.01ms;
+    scroll-behavior: auto;
+  }
+}

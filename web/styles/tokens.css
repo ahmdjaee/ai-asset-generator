@@ -1,0 +1,136 @@
+/*
+ * Dihasilkan oleh `bun run tokens:sync` dari design/tokens/ (ekspor FigCraft). Jangan diedit manual.
+ * Tema gelap = bawaan (:root); tema terang = [data-theme="light"].
+ * Pemakaian: bg-bg-app, text-text-primary, border-border-default, rounded-lg, text-body, p-4 (= 16px).
+ * Overline: tambahkan kelas `uppercase` (case: upper di FigCraft).
+ */
+
+@theme static {
+  --color-*: initial;
+  --color-accent-ring: #3f7bf5;
+  --color-accent-soft: #16233f;
+  --color-accent-solid: #2e6bf0;
+  --color-accent-solid-hover: #2a62dd;
+  --color-accent-text: #6ea2ff;
+  --color-axis-label: #0e0e10;
+  --color-axis-x: #e5646b;
+  --color-axis-y: #6cc17a;
+  --color-axis-z: #5b8ef0;
+  --color-bg-active: #2c2c32;
+  --color-bg-app: #0e0e10;
+  --color-bg-elevated: #222226;
+  --color-bg-hover: #26262b;
+  --color-bg-panel: #141416;
+  --color-bg-raised: #1b1b1e;
+  --color-bg-sunken: #0a0a0b;
+  --color-bg-viewport: #18181b;
+  --color-border-default: #26262a;
+  --color-border-strong: #36363c;
+  --color-danger-soft: #2d1716;
+  --color-danger-text: #f0706a;
+  --color-overlay-scrim: #000000a6;
+  --color-shadow-color: #00000080;
+  --color-success-soft: #12291e;
+  --color-success-text: #4cc38a;
+  --color-text-on-accent: #ffffff;
+  --color-text-primary: #ededef;
+  --color-text-secondary: #a1a1a8;
+  --color-text-tertiary: #8c8c93;
+  --color-viewport-grid: #222226;
+  --color-warning-soft: #2d2314;
+  --color-warning-text: #e7aa45;
+
+  --radius-*: initial;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  --spacing: 4px;
+
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  --text-*: initial;
+  --text-display: 24px;
+  --text-display--line-height: 32px;
+  --text-display--letter-spacing: -0.015em;
+  --text-display--font-weight: 600;
+  --text-title: 18px;
+  --text-title--line-height: 26px;
+  --text-title--letter-spacing: -0.01em;
+  --text-title--font-weight: 600;
+  --text-heading: 15px;
+  --text-heading--line-height: 22px;
+  --text-heading--letter-spacing: -0.005em;
+  --text-heading--font-weight: 600;
+  --text-body: 14px;
+  --text-body--line-height: 22px;
+  --text-body--letter-spacing: 0em;
+  --text-body--font-weight: 400;
+  --text-body-strong: 14px;
+  --text-body-strong--line-height: 20px;
+  --text-body-strong--letter-spacing: 0em;
+  --text-body-strong--font-weight: 600;
+  --text-label: 13px;
+  --text-label--line-height: 18px;
+  --text-label--letter-spacing: 0em;
+  --text-label--font-weight: 600;
+  --text-small: 13px;
+  --text-small--line-height: 18px;
+  --text-small--letter-spacing: 0em;
+  --text-small--font-weight: 400;
+  --text-caption: 12px;
+  --text-caption--line-height: 16px;
+  --text-caption--letter-spacing: 0em;
+  --text-caption--font-weight: 400;
+  --text-caption-strong: 12px;
+  --text-caption-strong--line-height: 16px;
+  --text-caption-strong--letter-spacing: 0em;
+  --text-caption-strong--font-weight: 600;
+  --text-overline: 12px;
+  --text-overline--line-height: normal;
+  --text-overline--letter-spacing: 0em;
+  --text-overline--font-weight: 400;
+}
+
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+
+  [data-theme="light"] {
+    color-scheme: light;
+    --color-accent-ring: #2563eb;
+    --color-accent-soft: #eaf1fe;
+    --color-accent-solid: #2563eb;
+    --color-accent-solid-hover: #1d4fd7;
+    --color-accent-text: #1d5bd6;
+    --color-axis-label: #ffffff;
+    --color-axis-x: #d2434b;
+    --color-axis-y: #2f8541;
+    --color-axis-z: #2f66d8;
+    --color-bg-active: #e7e7ea;
+    --color-bg-app: #f4f4f5;
+    --color-bg-elevated: #ffffff;
+    --color-bg-hover: #efeff1;
+    --color-bg-panel: #ffffff;
+    --color-bg-raised: #ffffff;
+    --color-bg-sunken: #f4f4f5;
+    --color-bg-viewport: #e6e6e9;
+    --color-border-default: #e4e4e7;
+    --color-border-strong: #d1d1d6;
+    --color-danger-soft: #fceceb;
+    --color-danger-text: #c2362f;
+    --color-overlay-scrim: #18181b66;
+    --color-shadow-color: #1018281f;
+    --color-success-soft: #e8f5ec;
+    --color-success-text: #12723a;
+    --color-text-on-accent: #ffffff;
+    --color-text-primary: #18181b;
+    --color-text-secondary: #5b5b63;
+    --color-text-tertiary: #6a6a70;
+    --color-viewport-grid: #d7d7dc;
+    --color-warning-soft: #fbf3e0;
+    --color-warning-text: #8a5300;
+  }
+}

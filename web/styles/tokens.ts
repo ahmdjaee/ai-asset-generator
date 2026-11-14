@@ -1,0 +1,96 @@
+// Dihasilkan oleh `bun run tokens:sync` dari design/tokens/ (ekspor FigCraft). Jangan diedit manual.
+
+/** Nama token warna (tanpa awalan `--color-`). */
+export const COLOR_TOKENS = [
+  "accent-ring",
+  "accent-soft",
+  "accent-solid",
+  "accent-solid-hover",
+  "accent-text",
+  "axis-label",
+  "axis-x",
+  "axis-y",
+  "axis-z",
+  "bg-active",
+  "bg-app",
+  "bg-elevated",
+  "bg-hover",
+  "bg-panel",
+  "bg-raised",
+  "bg-sunken",
+  "bg-viewport",
+  "border-default",
+  "border-strong",
+  "danger-soft",
+  "danger-text",
+  "overlay-scrim",
+  "shadow-color",
+  "success-soft",
+  "success-text",
+  "text-on-accent",
+  "text-primary",
+  "text-secondary",
+  "text-tertiary",
+  "viewport-grid",
+  "warning-soft",
+  "warning-text",
+] as const;
+export type ColorToken = (typeof COLOR_TOKENS)[number];
+
+/** Nilai warna per tema, untuk kode yang tidak membaca CSS (tes kontras, renderer headless). */
+export const COLOR_VALUES: Record<ColorToken, { dark: string; light: string }> = {
+  "accent-ring": { dark: "#3f7bf5", light: "#2563eb" },
+  "accent-soft": { dark: "#16233f", light: "#eaf1fe" },
+  "accent-solid": { dark: "#2e6bf0", light: "#2563eb" },
+  "accent-solid-hover": { dark: "#2a62dd", light: "#1d4fd7" },
+  "accent-text": { dark: "#6ea2ff", light: "#1d5bd6" },
+  "axis-label": { dark: "#0e0e10", light: "#ffffff" },
+  "axis-x": { dark: "#e5646b", light: "#d2434b" },
+  "axis-y": { dark: "#6cc17a", light: "#2f8541" },
+  "axis-z": { dark: "#5b8ef0", light: "#2f66d8" },
+  "bg-active": { dark: "#2c2c32", light: "#e7e7ea" },
+  "bg-app": { dark: "#0e0e10", light: "#f4f4f5" },
+  "bg-elevated": { dark: "#222226", light: "#ffffff" },
+  "bg-hover": { dark: "#26262b", light: "#efeff1" },
+  "bg-panel": { dark: "#141416", light: "#ffffff" },
+  "bg-raised": { dark: "#1b1b1e", light: "#ffffff" },
+  "bg-sunken": { dark: "#0a0a0b", light: "#f4f4f5" },
+  "bg-viewport": { dark: "#18181b", light: "#e6e6e9" },
+  "border-default": { dark: "#26262a", light: "#e4e4e7" },
+  "border-strong": { dark: "#36363c", light: "#d1d1d6" },
+  "danger-soft": { dark: "#2d1716", light: "#fceceb" },
+  "danger-text": { dark: "#f0706a", light: "#c2362f" },
+  "overlay-scrim": { dark: "#000000a6", light: "#18181b66" },
+  "shadow-color": { dark: "#00000080", light: "#1018281f" },
+  "success-soft": { dark: "#12291e", light: "#e8f5ec" },
+  "success-text": { dark: "#4cc38a", light: "#12723a" },
+  "text-on-accent": { dark: "#ffffff", light: "#ffffff" },
+  "text-primary": { dark: "#ededef", light: "#18181b" },
+  "text-secondary": { dark: "#a1a1a8", light: "#5b5b63" },
+  "text-tertiary": { dark: "#8c8c93", light: "#6a6a70" },
+  "viewport-grid": { dark: "#222226", light: "#d7d7dc" },
+  "warning-soft": { dark: "#2d2314", light: "#fbf3e0" },
+  "warning-text": { dark: "#e7aa45", light: "#8a5300" },
+};
+
+/** Nama text style untuk kelas `text-*` (ukuran, tinggi baris, jarak huruf, ketebalan). */
+export const TEXT_STYLES = [
+  "display",
+  "title",
+  "heading",
+  "body",
+  "body-strong",
+  "label",
+  "small",
+  "caption",
+  "caption-strong",
+  "overline",
+] as const;
+
+/** Nama radius untuk kelas `rounded-*`. */
+export const RADII = [
+  "sm",
+  "md",
+  "lg",
+  "xl",
+] as const;
