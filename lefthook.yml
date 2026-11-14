@@ -1,0 +1,13 @@
+# Git hooks. Dipasang otomatis oleh `bun install` (script `prepare`).
+pre-commit:
+  parallel: true
+  jobs:
+    - name: biome
+      run: bunx biome check --staged --no-errors-on-unmatched --files-ignore-unknown=true
+    - name: typecheck
+      run: bun run typecheck
+
+pre-push:
+  jobs:
+    - name: test
+      run: bun run test

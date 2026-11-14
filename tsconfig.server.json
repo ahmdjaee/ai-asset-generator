@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext"],
+    "types": ["bun"]
+  },
+  "include": [
+    "server",
+    "shared",
+    "scripts",
+    "tests/smoke",
+    "tests/integration",
+    "tests/pipeline",
+    "tests/architecture",
+    "tests/support",
+    "tests/e2e-api",
+    "*.ts"
+  ],
+  "exclude": ["web", "server/render/page", "tests/e2e", "tests/setup", "playwright.config.ts"]
+}

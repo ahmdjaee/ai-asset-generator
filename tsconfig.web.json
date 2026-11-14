@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "types": ["bun", "vite/client"]
+  },
+  "include": [
+    "web",
+    "shared",
+    "server/render/page",
+    "server/render/protocol.ts",
+    "server/types",
+    "tests/e2e",
+    "tests/setup",
+    "playwright.config.ts"
+  ]
+}

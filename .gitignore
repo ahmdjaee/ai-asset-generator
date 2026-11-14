@@ -1,0 +1,23 @@
+# Dependensi & hasil build
+node_modules/
+dist/
+dist-test/
+
+# Data lokal pemilik (database, aset, backup) — jangan pernah di-commit
+data/
+
+# Env lokal
+.env
+.env.*
+!.env.example
+
+# Hasil tes & evaluasi
+test-results/
+playwright-report/
+coverage/
+.tmp/
+eval/runs/
+
+# Lain-lain
+*.log
+.DS_Store

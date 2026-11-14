@@ -1,0 +1,24 @@
+# Ambang cakupan (PLAN Tahap 5 DoD): baris ≥90% untuk server/domain dan server/agent, lewat `bun run test:coverage`.
+# Perilaku Bun 1.4.4 (diuji 2026-11-14):
+# - ambang dicek PER FILE (lebih ketat dari rata-rata), hanya untuk file yang ter-load oleh tes;
+# - bila hanya `lines` diisi, `functions` ikut ditegakkan dengan nilai bawaan. DoD hanya meminta cakupan baris,
+#   jadi `functions` diset eksplisit 0.
+# File di luar kedua lapisan diabaikan supaya angka hanya mencerminkan domain dan agent.
+[test]
+coverageThreshold = { lines = 0.9, functions = 0.0 }
+coverageSkipTestFiles = true
+coveragePathIgnorePatterns = [
+  "shared/**",
+  "server/db/**",
+  "server/services/**",
+  "server/runtime/**",
+  "server/render/**",
+  "server/library/**",
+  "server/pipeline/**",
+  "server/jobs/**",
+  "server/http/**",
+  "server/realtime/**",
+  "server/*.ts",
+  "tests/**",
+  "scripts/**",
+]
