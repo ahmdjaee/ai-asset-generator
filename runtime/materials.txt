@@ -1,0 +1,71 @@
+# Pustaka material CC0 terkurasi dari ambientCG (https://ambientcg.com, lisensi CC0 1.0).
+# Format: <id ambientCG> <kategori>. Kategori: wood, metal, stone, fabric, leather, plastic, ground, misc.
+# Diunduh oleh `bun run textures:sync` (1K + 2K JPG) ke data/library/materials/; checksum di materials.lock.json.
+
+Wood096 wood
+Wood092 wood
+Wood051 wood
+Wood049 wood
+Planks040 wood
+Planks037A wood
+Planks023A wood
+Planks021 wood
+WoodFloor051 wood
+PaintedWood008C wood
+Bark014 wood
+
+Metal063 metal
+Metal041B metal
+Metal049A metal
+Metal055A metal
+Metal032 metal
+Metal048A metal
+Metal047B metal
+Metal035 metal
+MetalPlates006 metal
+MetalPlates013 metal
+PaintedMetal004 metal
+PaintedMetal016 metal
+CorrugatedSteel007A metal
+DiamondPlate008C metal
+Foil002 metal
+
+Rock064 stone
+Rock058 stone
+Rock035 stone
+Bricks105 stone
+Bricks113A stone
+Concrete034 stone
+Concrete048 stone
+Marble012 stone
+Marble006 stone
+
+Fabric086 fabric
+Fabric084 fabric
+Fabric081C fabric
+Fabric061 fabric
+Carpet016 fabric
+Wicker013 fabric
+
+Leather037 leather
+Leather030 leather
+Leather026 leather
+Leather034C leather
+
+Plastic013A plastic
+Plastic010 plastic
+Plastic006 plastic
+Rubber004 plastic
+Rubber001 plastic
+
+Ground111 ground
+Grass004 ground
+Gravel023 ground
+Moss002 ground
+Snow010A ground
+
+Plaster001 misc
+Clay005 misc
+Paper006 misc
+Tiles141 misc
+Asphalt025C misc

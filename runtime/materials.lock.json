@@ -1,0 +1,605 @@
+{
+  "version": 1,
+  "materials": {
+    "Wood096": {
+      "1k": {
+        "size": 5358165,
+        "sha256": "3aa0d5cddd866f5993c03a1a9bb036c1f7e82695cdf40f765cbea9faf91684ef"
+      },
+      "2k": {
+        "size": 19620619,
+        "sha256": "2082aa6b88ed87e3d056970249e0bb2785e76e80e680f4f9351385969fed7d9d"
+      }
+    },
+    "Wood092": {
+      "1k": {
+        "size": 5165143,
+        "sha256": "a6b843f19ad944b7faff0a939e86ed58c8e8702d9050dc667bea572d42a709f4"
+      },
+      "2k": {
+        "size": 18188772,
+        "sha256": "4c392495ec8689024659de2099f538089556d77dd7c2f2c2d70a707fa7d29d54"
+      }
+    },
+    "Wood051": {
+      "1k": {
+        "size": 6712631,
+        "sha256": "debf3d60f69a09c30613dc95a94da49c8116160ab8a29f77ac8e32cc33f1a1c3"
+      },
+      "2k": {
+        "size": 23152632,
+        "sha256": "ef50cd051a1d998bf2a03e243e991474415d948af6d4b76d291c937654c97d4b"
+      }
+    },
+    "Wood049": {
+      "1k": {
+        "size": 6784006,
+        "sha256": "74ec51bcf5ddfc2e9af6205dc5cbcc90ad51c22117e013ff8b1c7258f8ecbc69"
+      },
+      "2k": {
+        "size": 23170632,
+        "sha256": "a9dd578788a1e05434d126f5cb66b15520f98f5108ac535790145905fc176c54"
+      }
+    },
+    "Planks040": {
+      "1k": {
+        "size": 7825896,
+        "sha256": "14a48963e6252bb7939986f92e82c95da5e03c1e6c7001951ca04252709dc687"
+      },
+      "2k": {
+        "size": 27125913,
+        "sha256": "4a8184c8e359925db64d1841d484af829cd08f2313b230c9409b142e5a3998d8"
+      }
+    },
+    "Planks037A": {
+      "1k": {
+        "size": 5823702,
+        "sha256": "df255df16475bad251f194eb173017c46d5354d572348d435808717c478cf144"
+      },
+      "2k": {
+        "size": 20645427,
+        "sha256": "10b25dd182a8b1bd9ee7b662e1fd2677a717cf7566668e23c1b52b95edefdc83"
+      }
+    },
+    "Planks023A": {
+      "1k": {
+        "size": 6793089,
+        "sha256": "0d3e5649dcfd41239c9d34c3214c410faec32175d7d77e7de53fba450e33f669"
+      },
+      "2k": {
+        "size": 23874646,
+        "sha256": "7c9eed3084e7caca76f912dfe379c4614d3f737bfc16a137e2f884208cc7feec"
+      }
+    },
+    "Planks021": {
+      "1k": {
+        "size": 7052612,
+        "sha256": "9a593ffe4194132bd8c881558b47107f2c3c739018bbdad12fca5d877c90746a"
+      },
+      "2k": {
+        "size": 24271542,
+        "sha256": "1144764c2d14b55f7f65d21c50febeaf68ae873a7d6bfcaeffa62eaaf3552735"
+      }
+    },
+    "WoodFloor051": {
+      "1k": {
+        "size": 5104319,
+        "sha256": "3f493484eab1ec5e1c466b90e515003b286fc6d7f84ff8ff6485900bfc26cef5"
+      },
+      "2k": {
+        "size": 16427258,
+        "sha256": "eb7d1cee763bb17a59feb89b0fd16398d3673a071a76fed289111cf81013ac25"
+      }
+    },
+    "PaintedWood008C": {
+      "1k": {
+        "size": 7680351,
+        "sha256": "eaf5d4e3df481511a36e01e116f9770c3acb27712d70d11a55f9224512d6fb10"
+      },
+      "2k": {
+        "size": 28033619,
+        "sha256": "36ea5fc2b1cd44967fc5e3aed0349272c4739402ccd21af6a58eb318069748b0"
+      }
+    },
+    "Bark014": {
+      "1k": {
+        "size": 8700607,
+        "sha256": "c73728c32d6f0f3610f9db204448eff7e3acc74da0f8c1878920419772397670"
+      },
+      "2k": {
+        "size": 29750598,
+        "sha256": "2ae21b265b55512521b0c1f161ebaa5bbc9867d8e47327974027d38fb711d7eb"
+      }
+    },
+    "Metal063": {
+      "1k": {
+        "size": 5620613,
+        "sha256": "cc0a7f83d4bfd6c5d38638d17a0c214a004ccd295b8c554c959537bc278167ed"
+      },
+      "2k": {
+        "size": 18357564,
+        "sha256": "4c4a995457002ff5288c337254893d3bd42bdd13cecba3e3dadf84e71ebae4a6"
+      }
+    },
+    "Metal041B": {
+      "1k": {
+        "size": 6924078,
+        "sha256": "787bd97e7adfdc9cbf2f393cbeac9464759642194e5b4f6d4c408a85ee9ee3ab"
+      },
+      "2k": {
+        "size": 24013330,
+        "sha256": "5930fb7ed48e2e0ba4bd3749b689d966d0c7dc09a833e0f434a74d2acc92b024"
+      }
+    },
+    "Metal049A": {
+      "1k": {
+        "size": 2744738,
+        "sha256": "4f6a79e535261ab55cc6feefed0037124885720ce7b781fc2efa3fa22792af42"
+      },
+      "2k": {
+        "size": 7188932,
+        "sha256": "7c9da1f87d9c22306587e428db740e9db7119817af67d04d3b68cd33776511b2"
+      }
+    },
+    "Metal055A": {
+      "1k": {
+        "size": 4280189,
+        "sha256": "cb15430e4177d8d77a1ad47e9ab2e3f97f11a4d6991d41e350b8148b16e014df"
+      },
+      "2k": {
+        "size": 13993341,
+        "sha256": "f3d4d3e7b5fbe47ee311f760b22d81fbd677a824f04c2c93a9d9aaa57fc4614f"
+      }
+    },
+    "Metal032": {
+      "1k": {
+        "size": 3650556,
+        "sha256": "9e4f363905a647958c273154fa125d2a6440892d0e583f9b3af24bb08b5afc3c"
+      },
+      "2k": {
+        "size": 13036124,
+        "sha256": "4b8884843c490963d5734be036c35639d064e7a817eb61145322f69c6c19895a"
+      }
+    },
+    "Metal048A": {
+      "1k": {
+        "size": 2595307,
+        "sha256": "3915edefd3c8daaa3deb8be4070af19ff5663977ec01dbc677f1fa9bd3c07e5d"
+      },
+      "2k": {
+        "size": 6440847,
+        "sha256": "9de59c0c606592aa8ae13f35bf298cd9ff24efa08f72852e499208139cead1ec"
+      }
+    },
+    "Metal047B": {
+      "1k": {
+        "size": 6665645,
+        "sha256": "697c61bf5715de0cfa298c537e10ccceb0846feb842046596592ea304171196e"
+      },
+      "2k": {
+        "size": 20746878,
+        "sha256": "f0a7f7df3f6c647cba6f285c4339c5ab14e0837569b5ad849cbfa5ea6afac492"
+      }
+    },
+    "Metal035": {
+      "1k": {
+        "size": 3743722,
+        "sha256": "078b2ce2c27e5778160880def74eff09780438f29747c6dff93189054dcc1716"
+      },
+      "2k": {
+        "size": 12185781,
+        "sha256": "238590c6c37db1d0d730eb1e1636de35de85b9761f27a84cd0d8c25688244d9a"
+      }
+    },
+    "MetalPlates006": {
+      "1k": {
+        "size": 5247281,
+        "sha256": "0b7d3736bf76103f158bc2f550e28b54a2ea9ba553c9253ac172eca3bafb02b5"
+      },
+      "2k": {
+        "size": 13089825,
+        "sha256": "18dc289f6212817c51fcbcd74ea55ebf9d76cd89b85ad44978be72b1458d9124"
+      }
+    },
+    "MetalPlates013": {
+      "1k": {
+        "size": 7022039,
+        "sha256": "fa2e438b7512470264ebd98c872ca2ea321a0cce4c0ac43264891beec6a21b7d"
+      },
+      "2k": {
+        "size": 23076294,
+        "sha256": "83687a9d4fe9cbba5cfa1898a47bd8c90a0e999d648543fa75e30db597c78cf1"
+      }
+    },
+    "PaintedMetal004": {
+      "1k": {
+        "size": 8537287,
+        "sha256": "02c243e8e8441f0ee24e68645f5d8c9bd6d8ee0a3b9bfa3d952840902653f978"
+      },
+      "2k": {
+        "size": 25745782,
+        "sha256": "2ebc9feab92e00aa026d538b5ad068d573258eb4509245efb67eb29583d574fa"
+      }
+    },
+    "PaintedMetal016": {
+      "1k": {
+        "size": 9936183,
+        "sha256": "3ec5a85ceb270acebb77074b464fd2d1ee0374b1d00d95870fb1fd5db447fdcd"
+      },
+      "2k": {
+        "size": 36313127,
+        "sha256": "df345892071638ecf2b046e30e156447361fb3f71d9d7b846116af92bedd93d4"
+      }
+    },
+    "CorrugatedSteel007A": {
+      "1k": {
+        "size": 5091909,
+        "sha256": "c70ff5a3a182ab14a010105bcfbdf26617877ca6985f95ef5c6677d0c3175899"
+      },
+      "2k": {
+        "size": 17091389,
+        "sha256": "e971510c3c2c187a3d2c9eebee408184acac8c326383006170c2dd43e0e9bef0"
+      }
+    },
+    "DiamondPlate008C": {
+      "1k": {
+        "size": 7925288,
+        "sha256": "1e0e3f7fa2350fdb69969e74f3fb8f851d2770778d1ab9e6f7011b586162e159"
+      },
+      "2k": {
+        "size": 24298010,
+        "sha256": "0c7afb58ec80b3d46af307099451e1bc71c643c7b2ba2d45c7d69663d8d3f909"
+      }
+    },
+    "Foil002": {
+      "1k": {
+        "size": 7319381,
+        "sha256": "83703716bef962f671657a524fec12f80a2769d484015956bf74a49d7e30041d"
+      },
+      "2k": {
+        "size": 22779219,
+        "sha256": "5c5c9f814908d97e8d55bc555908a4eafffb9d748b70c8615fb9fb2e55a2e4d2"
+      }
+    },
+    "Rock064": {
+      "1k": {
+        "size": 8205462,
+        "sha256": "560f23fdd24f4abe27f5c272b86e69fd026c3d111e22f60d7fb647306830367b"
+      },
+      "2k": {
+        "size": 28438777,
+        "sha256": "225f88f2e8bfdac834027c497115f1f7bb82653a53e904987fa6b071fda94d9c"
+      }
+    },
+    "Rock058": {
+      "1k": {
+        "size": 8109936,
+        "sha256": "4d47ea9579507e4a410d87a78037d0b9c1fb5ecb6cbeba073f5ea0e13b95aa22"
+      },
+      "2k": {
+        "size": 27103895,
+        "sha256": "4b6dc8c6a5314957c656785c3a8ff95d721399fab31c9b1b13d90da8683e2f58"
+      }
+    },
+    "Rock035": {
+      "1k": {
+        "size": 9547643,
+        "sha256": "c5e4dbd7d5555734498834c1e09b799ef3d1f00c61fe08c0d953b93a8fb1bb95"
+      },
+      "2k": {
+        "size": 32989877,
+        "sha256": "92a770060e3c631fd7733b267f195a450240bd8ae6c5539b814e15e6fb6b1513"
+      }
+    },
+    "Bricks105": {
+      "1k": {
+        "size": 4840980,
+        "sha256": "d81326d3193b279c226d24eb0dd311fa0126ff208f9e7248adfb9f8dc94be0db"
+      },
+      "2k": {
+        "size": 14948113,
+        "sha256": "15056e8914909386c38a5d8e9a90b42f6bfae2749d2543a7bb423ff0ecf78060"
+      }
+    },
+    "Bricks113A": {
+      "1k": {
+        "size": 7839867,
+        "sha256": "71e8ea2e38b0f8cc688701511d64ffd81bcf3ede88eac52b82ebd282194ab854"
+      },
+      "2k": {
+        "size": 26521977,
+        "sha256": "70400f039bbc58aa7b65a6f4bf921b3c75d2174a6e7b27dca167b373f9d369d5"
+      }
+    },
+    "Concrete034": {
+      "1k": {
+        "size": 3657575,
+        "sha256": "5839d284d94ffb8d2a56df742ec522b13dd311c52dbd42b8fd33f0409ceedb81"
+      },
+      "2k": {
+        "size": 10598720,
+        "sha256": "fafd7cd3aee2b703abbb12b7810ef565ab76ac7ea3b1ea9a73b088e423e670b3"
+      }
+    },
+    "Concrete048": {
+      "1k": {
+        "size": 7536748,
+        "sha256": "af13b985a7a72c89f2a8e0c8ef5651a8f13126bf792b5ca5f6a0861712156df6"
+      },
+      "2k": {
+        "size": 28990525,
+        "sha256": "c61a3e7f03c625889c7fd71351a928217a15e81ea26e6f7dda16865b2882e483"
+      }
+    },
+    "Marble012": {
+      "1k": {
+        "size": 4672904,
+        "sha256": "b04384c6d49ce73baeb70db7ea4abfe9948fc9b74b9fd92c3766970662bf2c43"
+      },
+      "2k": {
+        "size": 14792073,
+        "sha256": "585c73d1e2dc8747074ef4fa4027795e3556fbe0fa43362c90c90b633f6956db"
+      }
+    },
+    "Marble006": {
+      "1k": {
+        "size": 4682587,
+        "sha256": "21328b7123f40fd49842d8f8934048033445ac248ec60fe75ccb5eae3b3ea774"
+      },
+      "2k": {
+        "size": 14814989,
+        "sha256": "2a01b2068f8f5e05c4afcd964e3a7648b4b731e4e0b1c59c6f98e8421d729949"
+      }
+    },
+    "Fabric086": {
+      "1k": {
+        "size": 7733757,
+        "sha256": "f36d944b15b9c1088dc880c46e2f5286d93cdfd44a5e68a63c1b61e6cc193fbb"
+      },
+      "2k": {
+        "size": 23893364,
+        "sha256": "9d49cc8711f1cabb15e39d6a9fb200f43f65b0312bf7a15e5f98883e5f6f7c0f"
+      }
+    },
+    "Fabric084": {
+      "1k": {
+        "size": 9333044,
+        "sha256": "63ab4cd2731ebe2797d3f2ab3a1ab1158668564fdfb1b4f1bd0a9c6f3ae382d9"
+      },
+      "2k": {
+        "size": 31661150,
+        "sha256": "619cfd4c183f66711f890d1d96d3240ef4a0197a35651e0515e39465cff38a60"
+      }
+    },
+    "Fabric081C": {
+      "1k": {
+        "size": 5040951,
+        "sha256": "54cb93482845a9b74b34b1294ce40ff9427df88ec700c7fcfec72125551dca31"
+      },
+      "2k": {
+        "size": 21429478,
+        "sha256": "19662b7e9dbf4f098f5f0957f1cb03bb0532db2c72e4076408ad6b35a105eeea"
+      }
+    },
+    "Fabric061": {
+      "1k": {
+        "size": 8984802,
+        "sha256": "537a84d3a91d50bc907d2e86f4f024041643eb6a04c10b115cdf308f29508eb2"
+      },
+      "2k": {
+        "size": 33405191,
+        "sha256": "27b729c1bafa7c47f5f89dea8ca43d6107156acd437c1439a30d28e9de0013c2"
+      }
+    },
+    "Carpet016": {
+      "1k": {
+        "size": 9371762,
+        "sha256": "b9e67b5d42cb47cead082dedae3767ae228175c857b6b3af6fe7bd4e69237b81"
+      },
+      "2k": {
+        "size": 31205527,
+        "sha256": "a57bceafe6f2e37ed931b02f7310f6df1f7bbef5653cc5811e04f57048bc533f"
+      }
+    },
+    "Wicker013": {
+      "1k": {
+        "size": 7589296,
+        "sha256": "c5a716e57e20a6f785342a2725cfec25a62b27f808dea76bcd878002b8a921e0"
+      },
+      "2k": {
+        "size": 26315721,
+        "sha256": "01a8cd32d87806be63a7a070528f07bee2d55c817ba2ee0363db97a90a0fe1de"
+      }
+    },
+    "Leather037": {
+      "1k": {
+        "size": 7323418,
+        "sha256": "7ec86a1e5e4a1a8ddf1db9bf999dd3f495eaa109b72406d7ff2eb65f1b6775fc"
+      },
+      "2k": {
+        "size": 21182522,
+        "sha256": "edfefef45891df244eee88d392e30bf70e797b77898926f00ea7cde7b88e1c14"
+      }
+    },
+    "Leather030": {
+      "1k": {
+        "size": 7526716,
+        "sha256": "0cdd772843bcaefb15fcec99b49c8d6436ab2f1535f39bf3a00ae65bc1e2aa06"
+      },
+      "2k": {
+        "size": 29531483,
+        "sha256": "4060fd715c5afac0ddebf4675f9e2fd02fd53592d00731fbe214f6367eeeafd6"
+      }
+    },
+    "Leather026": {
+      "1k": {
+        "size": 6841165,
+        "sha256": "6af2f446f9855c641da2a072f128d30965431ffae3306d22d75dbfff99c04646"
+      },
+      "2k": {
+        "size": 24017175,
+        "sha256": "681d26d63912c849151266a087290a41c2fc5e95789c2cd6669f36c45d70efa6"
+      }
+    },
+    "Leather034C": {
+      "1k": {
+        "size": 7706419,
+        "sha256": "45629f3d4c9553f7f500b8c44cf7ab9fe7c42c3318e18e91443eaeddb5453527"
+      },
+      "2k": {
+        "size": 27304848,
+        "sha256": "95f858d63014e16d2445de8aefb1047dd6fd285f3167070cf6c2b7a25b29bc24"
+      }
+    },
+    "Plastic013A": {
+      "1k": {
+        "size": 6300537,
+        "sha256": "2bf612fa6fe5556930196865beb55cefb833b83bd0bc3db1db7188074fb41260"
+      },
+      "2k": {
+        "size": 26490010,
+        "sha256": "df2bd7a76a4f8269249f7dfeb5105fbc60ce4d462095fe0e81abe95824947c67"
+      }
+    },
+    "Plastic010": {
+      "1k": {
+        "size": 3535012,
+        "sha256": "46a2504dbef278475b85c846713804a36823c7151cb79c90728d5c6eab283a19"
+      },
+      "2k": {
+        "size": 12649692,
+        "sha256": "81aebd803039a36f0c7b9c25d15f1a39a50758214d540df281eac0e13e3cd1a7"
+      }
+    },
+    "Plastic006": {
+      "1k": {
+        "size": 4454894,
+        "sha256": "81734a4f0c903ce605800ed73ba7f5e3eeb2fd2ed5fe13ad6db1021cb29b8cce"
+      },
+      "2k": {
+        "size": 15867501,
+        "sha256": "96b2acc16540c80190e7c57660dd3d9a805c403e4f5887812054197975a9bac9"
+      }
+    },
+    "Rubber004": {
+      "1k": {
+        "size": 8419107,
+        "sha256": "d8933e73c3b983892209bb143ca4bc13a48e4d55720ab12f6e6a303c96c84a31"
+      },
+      "2k": {
+        "size": 30486130,
+        "sha256": "dc1566f645f6ef7853bb3a3e7a15ef450edbb90cbd471c6097d44cd04521bea0"
+      }
+    },
+    "Rubber001": {
+      "1k": {
+        "size": 8442514,
+        "sha256": "9723fabed24f7befcdad24e953f44347a7b91e1d0c37a4fb5e31835e61c0902b"
+      },
+      "2k": {
+        "size": 30344118,
+        "sha256": "f98b7b58f5f2539432ea79aa96daa1c547deb332b83e1c6b9efa89a7c65a7d0e"
+      }
+    },
+    "Ground111": {
+      "1k": {
+        "size": 9761806,
+        "sha256": "ca2ce3b1fb92db615225b6b2f7ecf14cd2d3d8374e070fedfb092bba62b35084"
+      },
+      "2k": {
+        "size": 34401646,
+        "sha256": "691ca982a0ca075082c43d4e158310433a795bb68edad580a80adfe2e0a3e3c9"
+      }
+    },
+    "Grass004": {
+      "1k": {
+        "size": 11003149,
+        "sha256": "4b63495f459db8481f4d5144e4e9069345c81cf898cc71f2216f5dd3bb344469"
+      },
+      "2k": {
+        "size": 39900302,
+        "sha256": "d7d3f08e8bb1e59aed0c3dbb85ea0b46d5308481f89b6a3fd62c0ec9e862245b"
+      }
+    },
+    "Gravel023": {
+      "1k": {
+        "size": 9879090,
+        "sha256": "a00e7fd6246db4ae228473aac14f1bc427bd93f228ebe347a5d6390dd838b0a8"
+      },
+      "2k": {
+        "size": 31379349,
+        "sha256": "a6dd0aea7bcda95d6373c823734eda0cfa066e34c0eea9e1e07023926021bab5"
+      }
+    },
+    "Moss002": {
+      "1k": {
+        "size": 10391949,
+        "sha256": "727d4e3134f604837c2e11aa3bf12417a022d3c668a6d7339efa572fdbb056bb"
+      },
+      "2k": {
+        "size": 39615085,
+        "sha256": "03fe8868a5b5618b30037fcece05fff9ea736a61227d9566291a9d4b3a2bb047"
+      }
+    },
+    "Snow010A": {
+      "1k": {
+        "size": 6581401,
+        "sha256": "06852017cc69c885b4ee375f4dc8cf16184456b7f6f02de821fb7d2f3cbe8768"
+      },
+      "2k": {
+        "size": 24408577,
+        "sha256": "f1e90798f91d037c568032e08c513b89c3f4a5e3f5b925d80b742eb2dc13e782"
+      }
+    },
+    "Plaster001": {
+      "1k": {
+        "size": 7414156,
+        "sha256": "944b4831016e42ace4a89422e4e7190912ca2f7fed6f561354c48ec7bb54d3a4"
+      },
+      "2k": {
+        "size": 26140483,
+        "sha256": "9894765632cfa0feb3349b581825a9c224dee9efa1cebb8aba63bd1c7bc9fc3c"
+      }
+    },
+    "Clay005": {
+      "1k": {
+        "size": 7470218,
+        "sha256": "ad7dd46445c99281367a015fe33179310c97ddc7ab3df6fdc59286e20f04457e"
+      },
+      "2k": {
+        "size": 27913494,
+        "sha256": "722355473b7ab1fe6e0182c6061c79c5ecf2c246a3c8510d9bafa6567e674e0e"
+      }
+    },
+    "Paper006": {
+      "1k": {
+        "size": 4754836,
+        "sha256": "cd21850eb598b374f16c4ff2eaf2e22d8b56e0fe0b4b94d83db807a928bfce57"
+      },
+      "2k": {
+        "size": 17884524,
+        "sha256": "b307a70907ee1b01a7132ed16142df140180c13b6132955907ad00861720f839"
+      }
+    },
+    "Tiles141": {
+      "1k": {
+        "size": 4974199,
+        "sha256": "6ee56eba21592b9c02c6ee78dd93c6b585b62a2558d143d53e19457c82379d52"
+      },
+      "2k": {
+        "size": 16859961,
+        "sha256": "aa746dab97b16147d29e39113ed4d8788f165b659c79ee6a585afc721d64c068"
+      }
+    },
+    "Asphalt025C": {
+      "1k": {
+        "size": 8424697,
+        "sha256": "5a21213be4892b152c544ac20d2ee376fd6d332257ab4572920a459b9c4042e0"
+      },
+      "2k": {
+        "size": 32229495,
+        "sha256": "55674756668d69657b9b4d13d8aeea02a1519161671304cb41d73d077067c980"
+      }
+    }
+  }
+}
