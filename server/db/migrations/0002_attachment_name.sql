@@ -1,0 +1,1 @@
+ALTER TABLE `attachments` ADD `name` text DEFAULT 'lampiran' NOT NULL;

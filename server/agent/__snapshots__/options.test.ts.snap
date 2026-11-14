@@ -1,0 +1,80 @@
+// Bun Snapshot v1, https://bun.sh/docs/test/snapshots
+
+exports[`buildSessionOptions snapshot opsi sesi 1`] = `
+{
+  "additionalDirectories": [
+    "/data/assets/a1/refs",
+    "/repo/runtime/knowledge",
+  ],
+  "cwd": "/data/assets/a1/work",
+  "disallowedTools": [
+    "Bash",
+    "WebFetch",
+    "WebSearch",
+    "Task",
+    "Agent",
+    "NotebookEdit",
+    "mcp__claude_ai_*",
+  ],
+  "effort": "high",
+  "env": {
+    "HOME": "/home/pemilik",
+    "PATH": "/usr/bin",
+  },
+  "hasCanUseTool": true,
+  "hookEvents": [
+    "PreToolUse",
+  ],
+  "includePartialMessages": true,
+  "mcpServers": {
+    "forge": {
+      "name": "forge",
+      "type": "sdk",
+    },
+  },
+  "model": "claude-opus-5-5",
+  "permissionMode": "default",
+  "settingSources": [],
+  "settings": {
+    "permissions": {
+      "allow": [
+        "Read(//data/assets/a1/work/**)",
+        "Read(//data/assets/a1/refs/**)",
+        "Read(//repo/runtime/knowledge/**)",
+        "Edit(//data/assets/a1/work/**)",
+        "TodoWrite",
+        "mcp__forge__*",
+      ],
+      "deny": [
+        "Bash",
+        "WebFetch",
+        "WebSearch",
+        "Task",
+        "Agent",
+        "NotebookEdit",
+        "mcp__claude_ai_*",
+      ],
+      "disableBypassPermissionsMode": "disable",
+    },
+  },
+  "strictMcpConfig": true,
+  "systemPrompt": {
+    "append": "PERSONA",
+    "preset": "claude_code",
+    "type": "preset",
+  },
+  "thinking": {
+    "display": "summarized",
+    "type": "adaptive",
+  },
+  "tools": [
+    "Read",
+    "Write",
+    "Edit",
+    "Glob",
+    "Grep",
+    "TodoWrite",
+    "AskUserQuestion",
+  ],
+}
+`;
