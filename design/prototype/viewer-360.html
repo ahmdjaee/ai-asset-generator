@@ -1,0 +1,1037 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prototipe Viewer 360°</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap">
+<style>
+/* Tata letak: alat satu layar. Header tipis, viewport 3D mengisi ruang, panel info 300px di kanan; menumpuk di bawah 860px.
+   Token = koleksi "Theme" di desain FigCraft: gelap sebagai mode utama, terang sebagai varian. */
+:root {
+  --bg-app: #0E0E10; --bg-panel: #141416; --bg-raised: #1B1B1E; --bg-elevated: #222226;
+  --bg-hover: #26262B; --bg-active: #2C2C32;
+  --viewport: #18181B; --grid-minor: #25252B; --grid-major: #33333B; --floor-shadow: 0.42;
+  --border: #26262A; --border-strong: #36363C;
+  --text: #EDEDEF; --text-2: #A1A1A8; --text-3: #85858D; --on-accent: #FFFFFF;
+  --accent: #2E6BF0; --accent-text: #6EA2FF; --accent-soft: #16233F; --ring: #3F7BF5;
+  --axis-x: #E5646B; --axis-y: #6CC17A; --axis-z: #5B8EF0; --axis-label: #0E0E10;
+  --pop-shadow: 0 8px 24px #00000080;
+  --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg-app: #F4F4F5; --bg-panel: #FFFFFF; --bg-raised: #FFFFFF; --bg-elevated: #FFFFFF;
+    --bg-hover: #EFEFF1; --bg-active: #E7E7EA;
+    --viewport: #E6E6E9; --grid-minor: #D9D9DE; --grid-major: #CBCBD2; --floor-shadow: 0.22;
+    --border: #E4E4E7; --border-strong: #D1D1D6;
+    --text: #18181B; --text-2: #5B5B63; --text-3: #737379;
+    --accent: #2563EB; --accent-text: #1D5BD6; --accent-soft: #EAF1FE; --ring: #2563EB;
+    --axis-x: #D2434B; --axis-y: #2F8541; --axis-z: #2F66D8; --axis-label: #FFFFFF;
+    --pop-shadow: 0 8px 24px #1018281F;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg-app: #F4F4F5; --bg-panel: #FFFFFF; --bg-raised: #FFFFFF; --bg-elevated: #FFFFFF;
+  --bg-hover: #EFEFF1; --bg-active: #E7E7EA;
+  --viewport: #E6E6E9; --grid-minor: #D9D9DE; --grid-major: #CBCBD2; --floor-shadow: 0.22;
+  --border: #E4E4E7; --border-strong: #D1D1D6;
+  --text: #18181B; --text-2: #5B5B63; --text-3: #737379;
+  --accent: #2563EB; --accent-text: #1D5BD6; --accent-soft: #EAF1FE; --ring: #2563EB;
+  --axis-x: #D2434B; --axis-y: #2F8541; --axis-z: #2F66D8; --axis-label: #FFFFFF;
+  --pop-shadow: 0 8px 24px #1018281F;
+  color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { height: 100%; }
+body {
+  height: 100%; margin: 0; background: var(--bg-app); color: var(--text);
+  font: 400 14px/1.5 var(--font); -webkit-font-smoothing: antialiased;
+}
+button, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+.app {
+  height: 100%; display: flex; flex-direction: column; gap: 12px;
+  padding-block: 12px 16px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+
+/* Header */
+.top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; min-height: 32px; }
+.logo { width: 28px; height: 28px; border-radius: 8px; background: var(--accent); color: var(--on-accent); display: grid; place-items: center; flex: none; }
+.logo svg.i { width: 16px; height: 16px; }
+.crumbs { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.crumbs .muted { color: var(--text-2); }
+.crumbs svg.i { width: 14px; height: 14px; color: var(--text-3); }
+.crumbs strong { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.top .spacer { flex: 1; }
+.proto { font-size: 12px; color: var(--text-3); }
+
+/* Main */
+.main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 300px; grid-template-rows: minmax(0, 1fr); gap: 12px; }
+.viewport { position: relative; min-height: 0; min-width: 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--viewport); }
+#c { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; outline: none; }
+#c:active { cursor: grabbing; }
+
+/* Toolbar viewport */
+.toolbar {
+  position: absolute; top: 12px; left: 12px; z-index: 2; max-width: calc(100% - 24px);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px; padding: 4px;
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 10px;
+}
+.seg { display: flex; gap: 2px; }
+.seg button {
+  height: 28px; padding: 0 10px; border: 0; border-radius: 6px; background: transparent;
+  color: var(--text-3); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.seg button:hover { color: var(--text); }
+.seg button[aria-checked="true"] { background: var(--bg-active); color: var(--text); }
+.sep { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
+.ib {
+  width: 32px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 6px;
+  background: transparent; color: var(--text-2); cursor: pointer;
+}
+.ib:hover { background: var(--bg-hover); color: var(--text); }
+.ib[aria-pressed="true"] { background: var(--bg-active); color: var(--text); }
+.mbtn {
+  height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; border: 0; border-radius: 6px;
+  background: transparent; color: var(--text-2); font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.mbtn:hover, .mbtn[aria-expanded="true"] { background: var(--bg-hover); color: var(--text); }
+.mbtn[aria-pressed="true"] { background: var(--bg-active); color: var(--text); }
+.mbtn svg.chev { width: 14px; height: 14px; }
+.menu-wrap { position: relative; }
+.menu {
+  position: absolute; top: calc(100% + 8px); left: 0; z-index: 5; min-width: 196px; padding: 4px;
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 10px; box-shadow: var(--pop-shadow);
+}
+.menu button {
+  width: 100%; height: 32px; display: flex; align-items: center; gap: 8px; padding: 0 10px 0 8px;
+  border: 0; border-radius: 6px; background: transparent; color: var(--text); font-size: 13px; text-align: left; cursor: pointer;
+}
+.menu button:hover, .menu button:focus-visible { background: var(--bg-hover); outline: none; }
+.menu svg.check { width: 16px; height: 16px; color: var(--accent-text); visibility: hidden; }
+.menu button[aria-checked="true"] svg.check { visibility: visible; }
+.menu .aside { margin-left: auto; font-size: 12px; color: var(--text-3); }
+.menu .msep { height: 1px; margin: 4px 0; background: var(--border-strong); }
+
+.tip {
+  position: absolute; z-index: 6; display: flex; align-items: center; gap: 8px; padding: 5px 6px 5px 8px;
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: 6px; box-shadow: var(--pop-shadow);
+  font-size: 12px; color: var(--text); white-space: nowrap; pointer-events: none;
+}
+kbd {
+  display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 5px;
+  border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-raised);
+  font: 600 11px/1 var(--font); color: var(--text-2);
+}
+
+.hint { position: absolute; left: 12px; bottom: 12px; z-index: 1; margin: 0; max-width: calc(100% - 140px); font-size: 12px; color: var(--text-3); pointer-events: none; }
+.hint .touch { display: none; }
+.gizmo { position: absolute; right: 8px; bottom: 8px; z-index: 1; display: flex; flex-direction: column; align-items: center; gap: 0; }
+.gizmo svg { width: 96px; height: 96px; overflow: visible; }
+.gizmo .cap { font-size: 11px; color: var(--text-3); }
+.gizmo .gl { stroke-width: 2; stroke-linecap: round; }
+.gizmo .gl.x { stroke: var(--axis-x); } .gizmo .gl.y { stroke: var(--axis-y); } .gizmo .gl.z { stroke: var(--axis-z); }
+.gizmo .gn { cursor: pointer; }
+.gizmo .gn:focus { outline: none; }
+.gizmo .gn.x.pos circle { fill: var(--axis-x); } .gizmo .gn.y.pos circle { fill: var(--axis-y); } .gizmo .gn.z.pos circle { fill: var(--axis-z); }
+.gizmo .gn.neg circle { fill: var(--viewport); stroke-width: 1.5; }
+.gizmo .gn.x.neg circle { stroke: var(--axis-x); } .gizmo .gn.y.neg circle { stroke: var(--axis-y); } .gizmo .gn.z.neg circle { stroke: var(--axis-z); }
+.gizmo .gn:hover circle { opacity: 0.8; }
+.gizmo .gn:focus-visible circle { stroke: var(--ring); stroke-width: 2.5; }
+.gizmo text { font: 600 10px var(--font); fill: var(--axis-label); pointer-events: none; }
+.state {
+  position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; padding: 24px;
+  background: var(--viewport); color: var(--text-2); font-size: 13px; text-align: center;
+}
+
+/* Panel */
+.panel {
+  min-height: 0; overflow: auto; display: flex; flex-direction: column; gap: 22px; padding: 16px;
+  background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px;
+}
+.sec { display: flex; flex-direction: column; gap: 10px; }
+.over { margin: 0; font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-3); }
+.select { position: relative; }
+.select select {
+  appearance: none; -webkit-appearance: none; width: 100%; height: 36px; padding: 0 36px 0 12px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg-raised); color: var(--text); font-size: 14px; cursor: pointer;
+}
+.select select:hover { border-color: var(--border-strong); }
+.select svg.i { position: absolute; right: 10px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--text-2); pointer-events: none; }
+dl.kv { margin: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 6px 12px; font-size: 13px; align-items: center; }
+dl.kv dt { color: var(--text-2); }
+dl.kv dd { margin: 0; text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
+.now { display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent-text); font-size: 12px; font-weight: 600; }
+.now.free { background: var(--bg-active); color: var(--text-2); }
+.howto { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+.howto li { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: var(--text); }
+.howto li.touch { display: none; }
+.keys { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--text-3); white-space: nowrap; }
+.note { margin: auto 0 0; font-size: 12px; color: var(--text-3); }
+
+@media (pointer: coarse) {
+  .hint .mouse, .howto li.mouse, .howto li.kb { display: none; }
+  .hint .touch { display: inline; }
+  .howto li.touch { display: flex; }
+}
+@media (max-width: 860px) {
+  html, body, .app { height: auto; }
+  .app { min-height: 100%; }
+  .main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+  .viewport { height: min(68vh, 560px); min-height: 340px; }
+  .panel { overflow: visible; }
+}
+@media (max-width: 520px) {
+  .mbtn .lbl, .proto, #btnFull, .toolbar .sep { display: none; }
+  .gizmo svg { width: 80px; height: 80px; }
+  .hint { max-width: calc(100% - 112px); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <span class="logo" aria-hidden="true"><svg class="i" viewBox="0 0 24 24"><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
+    <nav class="crumbs" aria-label="Lokasi">
+      <span class="muted">Studio</span>
+      <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      <strong id="assetName">Peti harta kayu</strong>
+    </nav>
+    <span class="spacer"></span>
+    <span class="proto">Prototipe viewer · bukan aplikasi final</span>
+  </header>
+
+  <main class="main">
+    <section class="viewport" id="viewport" aria-label="Viewport 3D">
+      <canvas id="c" aria-label="Model 3D. Seret untuk memutar ke segala arah, scroll untuk zoom."></canvas>
+
+      <div class="toolbar" role="toolbar" aria-label="Kontrol tampilan">
+        <div class="seg" role="radiogroup" aria-label="Mode tampilan">
+          <button type="button" role="radio" aria-checked="true" data-mode="final">Tekstur</button>
+          <button type="button" role="radio" aria-checked="false" data-mode="clay">Clay</button>
+        </div>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="ib" id="btnWire" aria-pressed="false" aria-label="Wireframe" data-tip="Wireframe" data-key="W">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M13.73 4a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/></svg>
+        </button>
+        <button type="button" class="ib" id="btnGrid" aria-pressed="true" aria-label="Grid lantai" data-tip="Grid lantai" data-key="G">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/><path d="M15 3v18"/></svg>
+        </button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="mbtn" id="btnSpin" aria-pressed="false" aria-label="Putar otomatis" data-tip="Putar otomatis" data-key="R">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M16.466 7.5C15.643 4.237 13.952 2 12 2 9.239 2 7 6.477 7 12s2.239 10 5 10c.342 0 .677-.069 1-.2"/><path d="m15.194 13.707 3.814 1.86-1.86 3.814"/><path d="M19 15.57c-1.804.885-4.274 1.43-7 1.43-5.523 0-10-2.239-10-5s4.477-5 10-5c4.838 0 8.873 1.718 9.8 4"/></svg>
+          <span class="lbl">Putar otomatis</span>
+        </button>
+        <div class="menu-wrap">
+          <button type="button" class="mbtn" id="btnAngle" aria-haspopup="menu" aria-expanded="false" aria-controls="angleMenu">
+            <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v16h16"/><path d="m4 20 7-7"/></svg>
+            <span class="lbl">Sudut</span>
+            <svg class="i chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="menu" id="angleMenu" role="menu" aria-label="Sudut kamera" hidden></div>
+        </div>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" class="ib" id="btnFocus" aria-label="Fokus ke model" data-tip="Fokus ke model" data-key="F">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
+        </button>
+        <button type="button" class="ib" id="btnFull" aria-label="Layar penuh" data-tip="Layar penuh">
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" x2="14" y1="3" y2="10"/><line x1="3" x2="10" y1="21" y2="14"/></svg>
+        </button>
+      </div>
+
+      <p class="hint">
+        <span class="mouse">Seret untuk memutar ke segala arah · Shift + seret untuk menggeser · Scroll untuk zoom</span>
+        <span class="touch">Satu jari untuk memutar · dua jari untuk zoom dan menggeser</span>
+      </p>
+      <div class="gizmo">
+        <svg id="gizmo" viewBox="-48 -48 96 96" role="group" aria-label="Gizmo sumbu. Klik sumbu untuk melihat dari arah itu."></svg>
+        <span class="cap">Grid 20 cm</span>
+      </div>
+      <div class="tip" id="tip" role="tooltip" hidden></div>
+      <div class="state" id="state">Memuat viewer 3D…</div>
+    </section>
+
+    <aside class="panel" aria-label="Info viewer">
+      <section class="sec">
+        <h2 class="over" id="lblAsset">Aset contoh</h2>
+        <div class="select">
+          <select id="assetSel" aria-labelledby="lblAsset">
+            <option value="chest" selected>Peti harta kayu</option>
+            <option value="barrel">Tong kayu</option>
+            <option value="lantern">Lentera besi</option>
+            <option value="chair">Kursi kafe</option>
+            <option value="sword">Pedang ksatria</option>
+            <option value="mushroom">Jamur merah</option>
+            <option value="tree">Pohon low-poly</option>
+            <option value="rocks">Batu tebing</option>
+            <option value="crate">Peti kemas kayu</option>
+            <option value="canister">Kanister energi</option>
+          </select>
+          <svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        <dl class="kv">
+          <dt>Segitiga</dt><dd id="statTris">–</dd>
+          <dt>Dimensi (L × D × T)</dt><dd id="statSize">–</dd>
+        </dl>
+      </section>
+
+      <section class="sec">
+        <h2 class="over">Kamera</h2>
+        <dl class="kv">
+          <dt>Sudut</dt><dd><span class="now" id="camPreset">3/4</span></dd>
+          <dt>Azimut</dt><dd id="camAz">–</dd>
+          <dt>Elevasi</dt><dd id="camEl">–</dd>
+          <dt>Jarak</dt><dd id="camDist">–</dd>
+        </dl>
+      </section>
+
+      <section class="sec">
+        <h2 class="over">Cara memutar</h2>
+        <ul class="howto">
+          <li class="mouse"><span>Putar ke segala arah</span><span class="keys">Seret</span></li>
+          <li class="touch"><span>Putar ke segala arah</span><span class="keys">Geser satu jari</span></li>
+          <li class="mouse"><span>Geser</span><span class="keys"><kbd>Shift</kbd> + seret</span></li>
+          <li class="mouse"><span>Zoom</span><span class="keys">Scroll</span></li>
+          <li class="touch"><span>Zoom dan geser</span><span class="keys">Dua jari</span></li>
+          <li class="mouse"><span>Fokus ke titik</span><span class="keys">Klik dua kali</span></li>
+          <li class="kb"><span>Putar otomatis</span><kbd>R</kbd></li>
+          <li class="kb"><span>Fokus ulang</span><kbd>F</kbd></li>
+          <li class="kb"><span>Wireframe</span><kbd>W</kbd></li>
+          <li class="kb"><span>Grid lantai</span><kbd>G</kbd></li>
+        </ul>
+      </section>
+
+      <p class="note">Modelnya contoh prosedural. Di aplikasi, viewer yang sama memuat file .glb hasil generate.</p>
+    </aside>
+  </main>
+</div>
+
+<script>
+  setTimeout(function () {
+    var s = document.getElementById('state');
+    if (!window.__viewerReady && s && !s.hidden) s.textContent = 'Viewer 3D belum termuat. Periksa koneksi internet, lalu muat ulang halaman.';
+  }, 15000);
+</script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+} }
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = (s) => document.querySelector(s);
+const viewport = $('#viewport');
+const canvas = $('#c');
+const stateEl = $('#state');
+const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+} catch (err) {
+  stateEl.textContent = 'Viewer 3D tidak bisa dimulai karena WebGL tidak aktif di browser ini.';
+  throw err;
+}
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.NeutralToneMapping;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.VSMShadowMap;
+
+// ---------- lingkungan cahaya (softbox ala studio) ----------
+function roomEnv() {
+  const s = new THREE.Scene();
+  const room = new THREE.Mesh(new THREE.BoxGeometry(12, 10, 12), new THREE.MeshBasicMaterial({ color: 0x4a4a4a, side: THREE.BackSide }));
+  room.position.y = 4; s.add(room);
+  const box = (w, h, d, x, y, z, k) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshBasicMaterial({ color: new THREE.Color(k, k, k) }));
+    m.position.set(x, y, z); s.add(m);
+  };
+  box(5, 0.2, 5, 0, 8.8, 0, 5);
+  box(0.2, 3.5, 4, -5.8, 4, 0.5, 3.2);
+  box(0.2, 2.5, 2.5, 5.8, 3.5, 1.5, 1.6);
+  box(4, 2.5, 0.2, 0, 3.5, 5.8, 2.2);
+  box(11.6, 0.2, 11.6, 0, -0.85, 0, 0.3);   // lantai studio: pantulan lembut untuk sisi bawah model
+  const pm = new THREE.PMREMGenerator(renderer);
+  const tex = pm.fromScene(s, 0.04).texture;
+  pm.dispose();
+  return tex;
+}
+
+// ---------- tekstur prosedural ----------
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function woodTexture({ base = [0.085, 0.52, 0.33], planks = 5, seed = 7 } = {}) {
+  const c = document.createElement('canvas'); c.width = c.height = 1024;
+  const g = c.getContext('2d'); const r = rng(seed);
+  const ph = 1024 / planks;
+  for (let i = 0; i < planks; i++) {
+    const h = base[0] + (r() - 0.5) * 0.015, s = base[1] + (r() - 0.5) * 0.08, l = base[2] + (r() - 0.5) * 0.07;
+    g.fillStyle = `hsl(${h * 360},${s * 100}%,${l * 100}%)`;
+    g.fillRect(0, i * ph, 1024, ph);
+    for (let k = 0; k < 70; k++) {
+      const y = i * ph + r() * ph; const a = 0.05 + r() * 0.12;
+      g.strokeStyle = `rgba(40,22,10,${a})`; g.lineWidth = 0.6 + r() * 2.2;
+      g.beginPath(); g.moveTo(0, y);
+      for (let x = 0; x <= 1024; x += 64) g.lineTo(x, y + Math.sin(x * 0.004 + r() * 6) * (2 + r() * 5));
+      g.stroke();
+    }
+    if (r() > 0.4) {
+      const kx = r() * 1024, ky = i * ph + ph * (0.3 + r() * 0.4);
+      for (let q = 6; q > 0; q--) { g.strokeStyle = `rgba(50,28,12,${0.12 + q * 0.03})`; g.lineWidth = 1.5; g.beginPath(); g.ellipse(kx, ky, q * 6, q * 2.5, 0, 0, Math.PI * 2); g.stroke(); }
+    }
+    g.fillStyle = 'rgba(25,14,6,0.85)'; g.fillRect(0, i * ph, 1024, 5);
+    g.fillStyle = 'rgba(255,230,190,0.06)'; g.fillRect(0, i * ph + 5, 1024, 3);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  return t;
+}
+
+// ---------- geometri ----------
+function roundedBox(w, h, d, r = 0.01, seg = 3) {
+  const iw = w - 2 * r, ih = h - 2 * r, cr = Math.min(r * 0.8, iw / 4, ih / 4);
+  const s = new THREE.Shape();
+  s.moveTo(-iw / 2 + cr, -ih / 2); s.lineTo(iw / 2 - cr, -ih / 2); s.quadraticCurveTo(iw / 2, -ih / 2, iw / 2, -ih / 2 + cr);
+  s.lineTo(iw / 2, ih / 2 - cr); s.quadraticCurveTo(iw / 2, ih / 2, iw / 2 - cr, ih / 2);
+  s.lineTo(-iw / 2 + cr, ih / 2); s.quadraticCurveTo(-iw / 2, ih / 2, -iw / 2, ih / 2 - cr);
+  s.lineTo(-iw / 2, -ih / 2 + cr); s.quadraticCurveTo(-iw / 2, -ih / 2, -iw / 2 + cr, -ih / 2);
+  const g = new THREE.ExtrudeGeometry(s, { depth: d - 2 * r, bevelEnabled: true, bevelSize: r, bevelThickness: r, bevelSegments: seg, curveSegments: 3 });
+  g.translate(0, 0, -(d - 2 * r) / 2); g.computeVertexNormals();
+  return g;
+}
+const M = (geo, mat, x = 0, y = 0, z = 0) => { const m = new THREE.Mesh(geo, mat); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; return m; };
+function jitter(geo, amt, seed) {
+  const r = rng(seed); const p = geo.attributes.position; const map = new Map();
+  for (let i = 0; i < p.count; i++) {
+    const k = `${p.getX(i).toFixed(4)},${p.getY(i).toFixed(4)},${p.getZ(i).toFixed(4)}`;
+    if (!map.has(k)) map.set(k, [(r() - 0.5) * amt, (r() - 0.5) * amt, (r() - 0.5) * amt]);
+    const d = map.get(k); p.setXYZ(i, p.getX(i) + d[0], p.getY(i) + d[1], p.getZ(i) + d[2]);
+  }
+  geo.computeVertexNormals(); return geo;
+}
+
+// ---------- material ----------
+function mats(kind) {
+  if (kind === 'clay') {
+    const clay = new THREE.MeshStandardMaterial({ color: '#B9B9BF', roughness: 0.78, metalness: 0 });
+    return new Proxy({}, { get: () => clay });
+  }
+  const wt = woodTexture({ seed: 7 }); wt.repeat.set(1.6, 1.6);
+  const wl = woodTexture({ seed: 11, planks: 6 }); wl.repeat.set(1.4, 1.4);
+  const wv = woodTexture({ seed: 3, base: [0.09, 0.45, 0.45] }); wv.repeat.set(1.2, 1.2);
+  return {
+    wood: new THREE.MeshStandardMaterial({ map: wt, roughness: 0.72 }),
+    woodLid: new THREE.MeshStandardMaterial({ map: wl, roughness: 0.7 }),
+    woodLight: new THREE.MeshStandardMaterial({ map: wv, roughness: 0.68 }),
+    iron: new THREE.MeshStandardMaterial({ color: '#5A5A62', metalness: 0.8, roughness: 0.4 }),
+    brass: new THREE.MeshStandardMaterial({ color: '#C9A24D', metalness: 1, roughness: 0.3 }),
+    dark: new THREE.MeshStandardMaterial({ color: '#141414', roughness: 0.6 }),
+    leaf: new THREE.MeshStandardMaterial({ color: '#5E8F4A', roughness: 0.85, flatShading: true }),
+    leaf2: new THREE.MeshStandardMaterial({ color: '#4C7A3D', roughness: 0.85, flatShading: true }),
+    bark: new THREE.MeshStandardMaterial({ color: '#6B4A33', roughness: 0.9, flatShading: true }),
+    stone: new THREE.MeshStandardMaterial({ color: '#8A8A90', roughness: 0.92, flatShading: true }),
+    red: new THREE.MeshStandardMaterial({ color: '#C2463A', roughness: 0.55 }),
+    cream: new THREE.MeshStandardMaterial({ color: '#EEE3CF', roughness: 0.7 }),
+    glass: new THREE.MeshStandardMaterial({ color: '#E8C98F', roughness: 0.1, metalness: 0, transparent: true, opacity: 0.28 }),
+    flame: new THREE.MeshStandardMaterial({ color: '#FFB347', emissive: '#FF9A2E', emissiveIntensity: 2.2 }),
+    steel: new THREE.MeshStandardMaterial({ color: '#E2E6EB', metalness: 0.75, roughness: 0.3 }),
+    leather: new THREE.MeshStandardMaterial({ color: '#4A3022', roughness: 0.8 }),
+    paint: new THREE.MeshStandardMaterial({ color: '#D8DCE2', roughness: 0.45, metalness: 0.2 }),
+    emit: new THREE.MeshStandardMaterial({ color: '#7FB2FF', emissive: '#5B9BFF', emissiveIntensity: 1.6 }),
+  };
+}
+
+// ---------- model contoh ----------
+function chest(m) {
+  const g = new THREE.Group();
+  g.add(M(roundedBox(0.62, 0.3, 0.4, 0.012), m.wood, 0, 0.17, 0));
+  const lid = M(new THREE.CylinderGeometry(0.203, 0.203, 0.625, 40, 1, false, 0, Math.PI), m.woodLid, 0, 0.32, 0);
+  lid.rotation.z = Math.PI / 2; g.add(lid);
+  for (const x of [-0.2, 0.2]) {
+    g.add(M(roundedBox(0.05, 0.31, 0.414, 0.004, 2), m.iron, x, 0.17, 0));
+    const s = M(new THREE.CylinderGeometry(0.212, 0.212, 0.05, 40, 1, false, 0, Math.PI), m.iron, x, 0.32, 0); s.rotation.z = Math.PI / 2; g.add(s);
+  }
+  g.add(M(roundedBox(0.636, 0.04, 0.416, 0.006, 2), m.iron, 0, 0.02, 0));
+  g.add(M(roundedBox(0.636, 0.026, 0.416, 0.006, 2), m.iron, 0, 0.312, 0));
+  for (const x of [-0.3, 0.3]) for (const z of [-0.19, 0.19]) g.add(M(roundedBox(0.05, 0.07, 0.05, 0.006, 2), m.iron, x, 0.035, z));
+  g.add(M(roundedBox(0.09, 0.11, 0.022, 0.006, 2), m.brass, 0, 0.285, 0.207));
+  const kh = M(new THREE.CylinderGeometry(0.011, 0.011, 0.01, 16), m.dark, 0, 0.297, 0.219); kh.rotation.x = Math.PI / 2; g.add(kh);
+  g.add(M(new THREE.BoxGeometry(0.008, 0.024, 0.01), m.dark, 0, 0.281, 0.219));
+  for (const x of [-0.316, 0.316]) {
+    const h = M(new THREE.TorusGeometry(0.045, 0.008, 8, 20, Math.PI), m.iron, x, 0.2, 0); h.rotation.set(Math.PI, Math.PI / 2, 0); g.add(h);
+    g.add(M(roundedBox(0.012, 0.03, 0.12, 0.003, 1), m.iron, x, 0.205, 0));
+  }
+  return g;
+}
+function barrel(m) {
+  const g = new THREE.Group(); const pts = [];
+  for (let i = 0; i <= 16; i++) { const t = i / 16; pts.push(new THREE.Vector2(0.21 + Math.sin(t * Math.PI) * 0.04, t * 0.62)); }
+  g.add(M(new THREE.LatheGeometry(pts, 28), m.woodLight));
+  g.add(M(new THREE.CylinderGeometry(0.205, 0.205, 0.012, 28), m.wood, 0, 0.61, 0));
+  for (const t of [0.12, 0.38, 0.62, 0.88]) {
+    const r = 0.21 + Math.sin(t * Math.PI) * 0.04 + 0.004;
+    g.add(M(new THREE.CylinderGeometry(r, r, 0.032, 28, 1, true), m.iron, 0, t * 0.62, 0));
+  }
+  return g;
+}
+function lantern(m) {
+  const g = new THREE.Group();
+  g.add(M(roundedBox(0.2, 0.03, 0.2, 0.006), m.iron, 0, 0.015, 0));
+  for (const x of [-0.085, 0.085]) for (const z of [-0.085, 0.085]) g.add(M(new THREE.BoxGeometry(0.014, 0.24, 0.014), m.iron, x, 0.15, z));
+  g.add(M(new THREE.BoxGeometry(0.17, 0.22, 0.17), m.glass, 0, 0.14, 0));
+  g.add(M(new THREE.CylinderGeometry(0.025, 0.025, 0.08, 16), m.cream, 0, 0.07, 0));
+  g.add(M(new THREE.ConeGeometry(0.012, 0.035, 12), m.flame, 0, 0.13, 0));
+  g.add(M(roundedBox(0.21, 0.025, 0.21, 0.006), m.iron, 0, 0.275, 0));
+  const roof = M(new THREE.ConeGeometry(0.15, 0.1, 4), m.iron, 0, 0.335, 0); roof.rotation.y = Math.PI / 4; g.add(roof);
+  g.add(M(new THREE.TorusGeometry(0.04, 0.007, 8, 24), m.iron, 0, 0.42, 0));
+  const light = new THREE.PointLight('#FFB25C', 0.6, 1.2); light.position.set(0, 0.14, 0); g.add(light);
+  return g;
+}
+function chair(m) {
+  const g = new THREE.Group();
+  g.add(M(roundedBox(0.44, 0.04, 0.42, 0.008), m.woodLight, 0, 0.45, 0));
+  for (const x of [-0.19, 0.19]) for (const z of [-0.18, 0.18]) g.add(M(roundedBox(0.04, 0.45, 0.04, 0.005), m.woodLight, x, 0.225, z));
+  for (const x of [-0.19, 0.19]) g.add(M(roundedBox(0.04, 0.48, 0.04, 0.005), m.woodLight, x, 0.71, -0.18));
+  for (const y of [0.6, 0.72, 0.84]) g.add(M(roundedBox(0.36, 0.05, 0.025, 0.005), m.woodLight, 0, y, -0.18));
+  g.add(M(roundedBox(0.36, 0.025, 0.025, 0.004), m.woodLight, 0, 0.12, 0.18));
+  return g;
+}
+function tree(m) {
+  const g = new THREE.Group();
+  g.add(M(new THREE.CylinderGeometry(0.05, 0.075, 0.42, 7), m.bark, 0, 0.21, 0));
+  g.add(M(jitter(new THREE.IcosahedronGeometry(0.3, 1), 0.06, 3), m.leaf, 0, 0.6, 0));
+  g.add(M(jitter(new THREE.IcosahedronGeometry(0.22, 1), 0.05, 5), m.leaf2, 0.14, 0.82, 0.05));
+  g.add(M(jitter(new THREE.IcosahedronGeometry(0.18, 1), 0.04, 9), m.leaf, -0.13, 0.86, -0.04));
+  return g;
+}
+function rocks(m) {
+  const g = new THREE.Group();
+  const a = M(jitter(new THREE.DodecahedronGeometry(0.22, 1), 0.07, 1), m.stone, 0, 0.16, 0); a.scale.set(1.2, 0.75, 1); g.add(a);
+  const b = M(jitter(new THREE.DodecahedronGeometry(0.14, 1), 0.05, 2), m.stone, 0.26, 0.09, 0.08); b.scale.set(1, 0.7, 1.1); g.add(b);
+  g.add(M(jitter(new THREE.DodecahedronGeometry(0.1, 0), 0.04, 4), m.stone, -0.22, 0.06, 0.14));
+  return g;
+}
+function mushroom(m) {
+  const g = new THREE.Group(); const pts = [];
+  for (let i = 0; i <= 10; i++) { const t = i / 10; pts.push(new THREE.Vector2(0.07 - t * 0.02 + Math.sin(t * 3) * 0.008, t * 0.3)); }
+  g.add(M(new THREE.LatheGeometry(pts, 20), m.cream));
+  const cap = M(new THREE.SphereGeometry(0.22, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), m.red, 0, 0.27, 0); cap.scale.set(1, 0.72, 1); g.add(cap);
+  const r = rng(12);
+  for (let i = 0; i < 9; i++) {
+    const th = r() * Math.PI * 2, ph = 0.25 + r() * 0.9;
+    const d = M(new THREE.SphereGeometry(0.03 + r() * 0.015, 12, 8), m.cream);
+    d.position.set(Math.sin(ph) * Math.cos(th) * 0.215, 0.27 + Math.cos(ph) * 0.158, Math.sin(ph) * Math.sin(th) * 0.215);
+    d.scale.set(1, 0.35, 1); d.lookAt(0, 0.1, 0); d.rotateX(Math.PI / 2); g.add(d);
+  }
+  return g;
+}
+function sword(m) {
+  const g = new THREE.Group(); const s = new THREE.Shape();
+  s.moveTo(-0.028, 0); s.lineTo(0.028, 0); s.lineTo(0.024, 0.52); s.lineTo(0, 0.6); s.lineTo(-0.024, 0.52); s.lineTo(-0.028, 0);
+  g.add(M(new THREE.ExtrudeGeometry(s, { depth: 0.004, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.006, bevelSegments: 1 }), m.steel, 0, 0.2, -0.002));
+  g.add(M(roundedBox(0.2, 0.025, 0.04, 0.006), m.brass, 0, 0.19, 0));
+  g.add(M(new THREE.CylinderGeometry(0.018, 0.018, 0.15, 12), m.leather, 0, 0.1, 0));
+  g.add(M(new THREE.SphereGeometry(0.028, 16, 12), m.brass, 0, 0.02, 0));
+  g.rotation.z = -0.25; g.position.x = 0.06;
+  return g;
+}
+function crate(m) {
+  const g = new THREE.Group();
+  g.add(M(roundedBox(0.46, 0.46, 0.46, 0.01), m.woodLight, 0, 0.23, 0));
+  for (const z of [-0.232, 0.232]) {
+    for (const [x, y, w, h] of [[0, 0.025, 0.46, 0.05], [0, 0.435, 0.46, 0.05], [-0.205, 0.23, 0.05, 0.46], [0.205, 0.23, 0.05, 0.46]]) g.add(M(roundedBox(w, h, 0.02, 0.004), m.wood, x, y, z));
+    const d = M(roundedBox(0.56, 0.05, 0.018, 0.004), m.wood, 0, 0.23, z); d.rotation.z = Math.PI / 4; g.add(d);
+  }
+  return g;
+}
+function canister(m) {
+  const g = new THREE.Group();
+  g.add(M(new THREE.CylinderGeometry(0.13, 0.13, 0.42, 32), m.paint, 0, 0.25, 0));
+  g.add(M(new THREE.CylinderGeometry(0.14, 0.145, 0.05, 32), m.iron, 0, 0.025, 0));
+  g.add(M(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 32), m.iron, 0, 0.47, 0));
+  g.add(M(new THREE.CylinderGeometry(0.06, 0.07, 0.05, 24), m.iron, 0, 0.515, 0));
+  g.add(M(new THREE.CylinderGeometry(0.132, 0.132, 0.03, 32), m.emit, 0, 0.3, 0));
+  for (let i = 0; i < 4; i++) { const a = i * Math.PI / 2 + Math.PI / 4; g.add(M(roundedBox(0.03, 0.36, 0.03, 0.004), m.iron, Math.cos(a) * 0.135, 0.25, Math.sin(a) * 0.135)); }
+  return g;
+}
+const MODELS = { chest, barrel, lantern, chair, tree, rocks, mushroom, sword, crate, canister };
+
+// ---------- adegan ----------
+const scene = new THREE.Scene();
+scene.environment = roomEnv();
+const camera = new THREE.PerspectiveCamera(30, 1, 0.01, 200);
+const controls = new OrbitControls(camera, canvas);
+Object.assign(controls, {
+  enableDamping: true, dampingFactor: 0.08, screenSpacePanning: true,
+  minPolarAngle: 0, maxPolarAngle: Math.PI,   // atas-bawah penuh: bisa melihat dari atas dan dari bawah
+  rotateSpeed: 0.9, zoomSpeed: 0.9,
+  autoRotateSpeed: 3,                          // ±20 detik per putaran
+});
+
+const key = new THREE.DirectionalLight('#ffffff', 2.4);
+key.castShadow = true; key.shadow.mapSize.set(2048, 2048);
+Object.assign(key.shadow, { bias: -0.0004, normalBias: 0.01, radius: 10, blurSamples: 20 });
+const hemi = new THREE.HemisphereLight('#ffffff', '#3a3a40', 0.45);
+scene.add(key, key.target, hemi);
+// Lampu bawah: hanya menyala saat kamera di bawah lantai, supaya sisi bawah model tetap terbaca.
+const under = new THREE.DirectionalLight('#ffffff', 0);
+scene.add(under, under.target);
+
+const catcherMat = new THREE.ShadowMaterial({ opacity: 0.42 });
+const catcher = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), catcherMat);
+catcher.rotation.x = -Math.PI / 2; catcher.receiveShadow = true; scene.add(catcher);
+
+const gridMat = new THREE.ShaderMaterial({
+  transparent: true, depthWrite: false,
+  uniforms: {
+    uMinor: { value: new THREE.Vector3() }, uMajor: { value: new THREE.Vector3() },
+    uCell: { value: 0.2 }, uNear: { value: 1.2 }, uFar: { value: 3.4 }, uOpacity: { value: 1 },
+  },
+  vertexShader: `
+    varying vec3 vPos;
+    void main() { vec4 wp = modelMatrix * vec4(position, 1.0); vPos = wp.xyz; gl_Position = projectionMatrix * viewMatrix * wp; }`,
+  fragmentShader: `
+    uniform vec3 uMinor; uniform vec3 uMajor; uniform float uCell; uniform float uNear; uniform float uFar; uniform float uOpacity;
+    varying vec3 vPos;
+    float gridLine(vec2 p, float cell, float width) {
+      vec2 c = p / cell;
+      vec2 g = abs(fract(c - 0.5) - 0.5) / fwidth(c);
+      return 1.0 - min(min(g.x, g.y) / width, 1.0);
+    }
+    void main() {
+      float minor = gridLine(vPos.xz, uCell, 1.0);
+      float major = gridLine(vPos.xz, uCell * 5.0, 1.4);
+      float fade = 1.0 - smoothstep(uNear, uFar, length(vPos.xz));
+      float a = max(minor, major) * fade * uOpacity;
+      if (a < 0.002) discard;
+      gl_FragColor = vec4(mix(uMinor, uMajor, major), a);
+    }`,
+});
+const grid = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), gridMat);
+grid.rotation.x = -Math.PI / 2; grid.position.y = -0.0005; grid.renderOrder = -1;
+scene.add(grid);
+
+const wireMat = new THREE.LineBasicMaterial({ color: '#2A2A30', transparent: true, opacity: 0.55 });
+
+// ---------- status ----------
+const view = { key: 'chest', mode: 'final', wire: false, grid: true };
+const bounds = { center: new THREE.Vector3(0, 0.25, 0), radius: 0.4, size: new THREE.Vector3() };
+const matCache = {};
+const getMats = (kind) => matCache[kind] || (matCache[kind] = mats(kind));
+let model = null;
+let floorShadow = 0.42;
+
+const fmt2 = (v) => v.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const fmtInt = (v) => v.toLocaleString('id-ID');
+function triCount(obj) {
+  let t = 0;
+  obj.traverse((o) => { if (o.isMesh) { const g = o.geometry; t += (g.index ? g.index.count : g.attributes.position.count) / 3; } });
+  return Math.round(t);
+}
+
+function fitDistance() {
+  const v = THREE.MathUtils.degToRad(camera.fov);
+  const h = 2 * Math.atan(Math.tan(v / 2) * camera.aspect);
+  return (bounds.radius * 1.2) / Math.sin(Math.min(v, h) / 2);
+}
+function updateLimits() {
+  controls.minDistance = bounds.radius * 1.05;
+  controls.maxDistance = Math.max(fitDistance() * 3, bounds.radius * 6);
+}
+
+function applyWire() {
+  if (!model) return;
+  model.traverse((o) => {
+    if (!o.isMesh) return;
+    if (view.wire && !o.userData.wire) {
+      const l = new THREE.LineSegments(new THREE.WireframeGeometry(o.geometry), wireMat);
+      l.raycast = () => {};
+      o.add(l); o.userData.wire = l;
+    }
+    if (o.userData.wire) o.userData.wire.visible = view.wire;
+  });
+}
+
+function buildModel() {
+  if (model) {
+    scene.remove(model);
+    model.traverse((o) => { if (o.isMesh || o.isLineSegments) o.geometry.dispose(); });
+  }
+  model = MODELS[view.key](getMats(view.mode));
+  scene.add(model);
+  model.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(model);
+  const sph = box.getBoundingSphere(new THREE.Sphere());
+  bounds.center.copy(sph.center); bounds.radius = sph.radius; box.getSize(bounds.size);
+  applyWire();
+
+  const clay = view.mode === 'clay';
+  scene.environmentIntensity = clay ? 0.5 : 0.85;
+  key.intensity = clay ? 2.0 : 2.4;
+  hemi.intensity = clay ? 0.55 : 0.45;
+  key.position.set(sph.center.x - 1.4, sph.center.y + 2.8, sph.center.z + 1.6);
+  key.target.position.copy(sph.center);
+  under.position.set(sph.center.x + 0.6, sph.center.y - 3, sph.center.z + 1.2);
+  under.target.position.copy(sph.center);
+  const s = Math.max(0.8, sph.radius * 2);
+  const sc = key.shadow.camera;
+  sc.left = sc.bottom = -s; sc.right = sc.top = s; sc.near = 0.1; sc.far = 8; sc.updateProjectionMatrix();
+  gridMat.uniforms.uNear.value = Math.max(1.0, sph.radius * 2.6);
+  gridMat.uniforms.uFar.value = gridMat.uniforms.uNear.value + 2.2;
+  updateLimits();
+
+  $('#statTris').textContent = fmtInt(triCount(model));
+  $('#statSize').textContent = `${fmt2(bounds.size.x)} × ${fmt2(bounds.size.z)} × ${fmt2(bounds.size.y)} m`;
+  requestRender();
+}
+
+// ---------- kamera: sudut cepat & transisi ----------
+const ISO = new THREE.Vector3(0.9, 0.62, 1.2);
+const PRESETS = {
+  iso: { label: '3/4', theta: Math.atan2(ISO.x, ISO.z), phi: Math.acos(ISO.y / ISO.length()) },
+  front: { label: 'Depan', theta: 0, phi: Math.PI / 2 },
+  back: { label: 'Belakang', theta: Math.PI, phi: Math.PI / 2 },
+  left: { label: 'Kiri', theta: -Math.PI / 2, phi: Math.PI / 2 },
+  right: { label: 'Kanan', theta: Math.PI / 2, phi: Math.PI / 2 },
+  top: { label: 'Atas', theta: 0, phi: 0.0015 },
+  bottom: { label: 'Bawah', theta: 0, phi: Math.PI - 0.0015 },
+};
+const ORDER = ['iso', 'front', 'back', 'left', 'right', 'top', 'bottom'];
+const deg = THREE.MathUtils.radToDeg;
+const ISO_AZ = deg(PRESETS.iso.theta), ISO_EL = 90 - deg(PRESETS.iso.phi);
+
+const tmpV = new THREE.Vector3();
+let tween = null;
+const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+const currentSpherical = () => new THREE.Spherical().setFromVector3(tmpV.copy(camera.position).sub(controls.target));
+
+function stopMomentum() {
+  if (controls._sphericalDelta) controls._sphericalDelta.set(0, 0, 0);
+  if (controls._panOffset) controls._panOffset.set(0, 0, 0);
+  if ('_scale' in controls) controls._scale = 1;
+}
+function flyTo(target, theta, phi, radius, duration = 700) {
+  const s = currentSpherical();
+  const d = Math.atan2(Math.sin(theta - s.theta), Math.cos(theta - s.theta));   // jalur terpendek
+  tween = {
+    t0: performance.now(), dur: reduceMotion ? 0 : duration,
+    from: { theta: s.theta, phi: s.phi, radius: s.radius, target: controls.target.clone() },
+    to: { theta: s.theta + d, phi, radius, target: target.clone() },
+  };
+  stopMomentum();
+  requestRender();
+}
+function stepTween(now) {
+  const { from, to, t0, dur } = tween;
+  const k = dur ? Math.min(1, (now - t0) / dur) : 1;
+  const e = ease(k);
+  const L = THREE.MathUtils.lerp;
+  controls.target.lerpVectors(from.target, to.target, e);
+  const phi = THREE.MathUtils.clamp(L(from.phi, to.phi, e), 0.0015, Math.PI - 0.0015);
+  tmpV.setFromSphericalCoords(L(from.radius, to.radius, e), phi, L(from.theta, to.theta, e));
+  camera.position.copy(controls.target).add(tmpV);
+  camera.lookAt(controls.target);
+  if (k >= 1) { tween = null; controls.update(); }
+}
+function goPreset(id) {
+  const p = PRESETS[id];
+  setSpin(false);
+  flyTo(bounds.center, p.theta, p.phi, fitDistance());
+}
+function focusModel() {
+  const s = currentSpherical();
+  flyTo(bounds.center, s.theta, s.phi, fitDistance());
+}
+function placeInitial() {
+  const p = PRESETS.iso;
+  controls.target.copy(bounds.center);
+  tmpV.setFromSphericalCoords(fitDistance(), p.phi, p.theta);
+  camera.position.copy(bounds.center).add(tmpV);
+  camera.lookAt(bounds.center);
+  controls.update();
+}
+
+// ---------- lantai disembunyikan saat kamera di bawah ----------
+function updateFloor() {
+  const k = THREE.MathUtils.clamp(camera.position.y / Math.max(0.05, bounds.radius * 0.25), 0, 1);
+  gridMat.uniforms.uOpacity.value = k;
+  grid.visible = view.grid && k > 0;
+  catcherMat.opacity = floorShadow * k;
+  catcher.visible = k > 0;
+  under.intensity = (1 - k) * 1.4;
+}
+
+// ---------- gizmo sumbu ----------
+const SVGNS = 'http://www.w3.org/2000/svg';
+const svgEl = (tag, attrs = {}) => { const el = document.createElementNS(SVGNS, tag); for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v); return el; };
+const gizmo = $('#gizmo');
+const linesG = svgEl('g'); const nodesG = svgEl('g');
+gizmo.append(linesG, nodesG);
+const AXES = [
+  { v: [1, 0, 0], cls: 'x', label: 'X', preset: 'right', name: 'kanan' },
+  { v: [-1, 0, 0], cls: 'x', label: '', preset: 'left', name: 'kiri' },
+  { v: [0, 1, 0], cls: 'y', label: 'Y', preset: 'top', name: 'atas' },
+  { v: [0, -1, 0], cls: 'y', label: '', preset: 'bottom', name: 'bawah' },
+  { v: [0, 0, 1], cls: 'z', label: 'Z', preset: 'front', name: 'depan' },
+  { v: [0, 0, -1], cls: 'z', label: '', preset: 'back', name: 'belakang' },
+];
+for (const a of AXES) {
+  a.vec = new THREE.Vector3(...a.v);
+  if (a.label) { a.line = svgEl('line', { class: 'gl ' + a.cls, x1: 0, y1: 0, x2: 0, y2: 0 }); linesG.append(a.line); }
+  a.g = svgEl('g', { class: `gn ${a.cls} ${a.label ? 'pos' : 'neg'}`, tabindex: '0', role: 'button', 'aria-label': `Lihat dari ${a.name}` });
+  a.g.append(svgEl('circle', { r: a.label ? 9 : 6 }));
+  if (a.label) { const t = svgEl('text', { 'text-anchor': 'middle', dy: '0.35em' }); t.textContent = a.label; a.g.append(t); }
+  a.g.addEventListener('click', () => goPreset(a.preset));
+  a.g.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goPreset(a.preset); } });
+  nodesG.append(a.g);
+}
+let gizmoOrder = '';
+function updateGizmo() {
+  const R = 34;
+  for (const a of AXES) {
+    tmpV.copy(a.vec).transformDirection(camera.matrixWorldInverse);
+    a.x = tmpV.x * R; a.y = -tmpV.y * R; a.z = tmpV.z;
+    a.g.setAttribute('transform', `translate(${a.x.toFixed(2)} ${a.y.toFixed(2)})`);
+    a.g.style.opacity = a.z < -0.25 ? '0.6' : '1';
+    if (a.line) { a.line.setAttribute('x2', a.x.toFixed(2)); a.line.setAttribute('y2', a.y.toFixed(2)); }
+  }
+  const sorted = [...AXES].sort((p, q) => p.z - q.z);
+  const order = sorted.map((a) => a.preset).join();
+  if (order !== gizmoOrder) {
+    gizmoOrder = order;
+    const focused = document.activeElement;
+    for (const a of sorted) nodesG.append(a.g);
+    if (focused && nodesG.contains(focused)) focused.focus();
+  }
+}
+
+// ---------- panel kamera ----------
+const angDiff = (a, b) => Math.abs(((a - b + 540) % 360) - 180);
+function nearestPreset(az, el) {
+  if (el > 85) return 'top';
+  if (el < -85) return 'bottom';
+  if (Math.abs(el) < 4) {
+    for (const [id, a] of [['front', 0], ['right', 90], ['back', 180], ['left', 270]]) if (angDiff(az, a) < 4) return id;
+  }
+  if (angDiff(az, ISO_AZ) < 4 && Math.abs(el - ISO_EL) < 4) return 'iso';
+  return null;
+}
+const textCache = new Map();
+function setText(id, v) { if (textCache.get(id) !== v) { textCache.set(id, v); document.getElementById(id).textContent = v; } }
+let lastPreset;
+function updateReadout() {
+  const s = currentSpherical();
+  const az = (deg(s.theta) + 360) % 360;
+  const el = 90 - deg(s.phi);
+  setText('camAz', `${Math.round(az) % 360}°`);
+  setText('camEl', `${Math.round(el) < 0 ? '−' : ''}${Math.abs(Math.round(el))}°`);
+  setText('camDist', `${fmt2(s.radius)} m`);
+  const p = nearestPreset(az, el);
+  if (p !== lastPreset) {
+    lastPreset = p;
+    const chip = $('#camPreset');
+    chip.textContent = p ? PRESETS[p].label : 'Bebas';
+    chip.classList.toggle('free', !p);
+    for (const b of menuItems) b.setAttribute('aria-checked', String(b.dataset.preset === p));
+  }
+}
+
+// ---------- tema ----------
+const hexToVec = (hex, v) => { const n = parseInt(hex.replace('#', '').slice(0, 6), 16); return v.set(((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255); };
+function readTheme() {
+  const cs = getComputedStyle(document.documentElement);
+  const get = (n) => cs.getPropertyValue(n).trim();
+  scene.background = new THREE.Color(get('--viewport') || '#18181B');
+  hexToVec(get('--grid-minor') || '#25252B', gridMat.uniforms.uMinor.value);
+  hexToVec(get('--grid-major') || '#33333B', gridMat.uniforms.uMajor.value);
+  floorShadow = parseFloat(get('--floor-shadow')) || 0.42;
+  requestRender();
+}
+matchMedia('(prefers-color-scheme: light)').addEventListener('change', readTheme);
+new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+// ---------- render saat perlu ----------
+const clock = new THREE.Clock();
+let raf = 0, ready = false;
+function requestRender() { if (!raf) raf = requestAnimationFrame(frame); }
+function frame(now) {
+  raf = 0;
+  const dt = Math.min(clock.getDelta(), 0.1);
+  let moving;
+  if (tween) { stepTween(now); moving = true; }
+  else moving = controls.update(dt) || controls.autoRotate;
+  updateFloor();
+  renderer.render(scene, camera);
+  updateGizmo();
+  updateReadout();
+  if (!ready) { ready = true; stateEl.hidden = true; window.__viewerReady = true; }
+  if (moving) requestRender();
+}
+controls.addEventListener('change', requestRender);
+controls.addEventListener('start', () => { tween = null; hideTip(); });
+canvas.addEventListener('pointerdown', () => { if (controls.autoRotate) setSpin(false); closeMenu(false); });
+
+function resize() {
+  const w = viewport.clientWidth, h = viewport.clientHeight;
+  if (!w || !h) return;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+  updateLimits();
+  requestRender();
+}
+new ResizeObserver(resize).observe(viewport);
+
+// ---------- kontrol UI ----------
+const btnSpin = $('#btnSpin'), btnWire = $('#btnWire'), btnGrid = $('#btnGrid'), btnFull = $('#btnFull');
+function setSpin(on) { controls.autoRotate = on; btnSpin.setAttribute('aria-pressed', String(on)); requestRender(); }
+function setWire(on) { view.wire = on; btnWire.setAttribute('aria-pressed', String(on)); applyWire(); requestRender(); }
+function setGrid(on) { view.grid = on; btnGrid.setAttribute('aria-pressed', String(on)); requestRender(); }
+btnSpin.addEventListener('click', () => setSpin(!controls.autoRotate));
+btnWire.addEventListener('click', () => setWire(!view.wire));
+btnGrid.addEventListener('click', () => setGrid(!view.grid));
+$('#btnFocus').addEventListener('click', focusModel);
+
+const modeBtns = [...document.querySelectorAll('.seg [data-mode]')];
+function setMode(mode) {
+  if (view.mode === mode) return;
+  view.mode = mode;
+  for (const b of modeBtns) { const on = b.dataset.mode === mode; b.setAttribute('aria-checked', String(on)); b.tabIndex = on ? 0 : -1; }
+  buildModel();
+}
+modeBtns.forEach((b, i) => {
+  b.tabIndex = b.getAttribute('aria-checked') === 'true' ? 0 : -1;
+  b.addEventListener('click', () => setMode(b.dataset.mode));
+  b.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+    e.preventDefault();
+    const next = modeBtns[(i + (e.key === 'ArrowRight' ? 1 : modeBtns.length - 1)) % modeBtns.length];
+    next.focus(); setMode(next.dataset.mode);
+  });
+});
+
+$('#assetSel').addEventListener('change', (e) => {
+  view.key = e.target.value;
+  $('#assetName').textContent = e.target.selectedOptions[0].textContent;
+  buildModel();
+  flyTo(bounds.center, PRESETS.iso.theta, PRESETS.iso.phi, fitDistance());
+});
+
+// Menu sudut
+const menu = $('#angleMenu'), btnAngle = $('#btnAngle');
+const menuItems = [];
+for (const id of ORDER) {
+  const b = document.createElement('button');
+  b.type = 'button'; b.dataset.preset = id;
+  b.setAttribute('role', 'menuitemradio'); b.setAttribute('aria-checked', 'false');
+  b.innerHTML = `<svg class="i check" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><span>${PRESETS[id].label}</span>${id === 'iso' ? '<span class="aside">bawaan</span>' : ''}`;
+  b.addEventListener('click', () => { goPreset(id); closeMenu(true); });
+  menu.append(b); menuItems.push(b);
+  // Kelompok: 3/4 | Depan, Belakang, Kiri, Kanan | Atas, Bawah
+  if (id === 'iso' || id === 'right') {
+    const sep = document.createElement('div');
+    sep.className = 'msep'; sep.setAttribute('role', 'separator');
+    menu.append(sep);
+  }
+}
+function openMenu() {
+  hideTip();
+  menu.hidden = false; btnAngle.setAttribute('aria-expanded', 'true');
+  (menu.querySelector('[aria-checked="true"]') || menuItems[0]).focus();
+}
+function closeMenu(returnFocus) {
+  if (menu.hidden) return;
+  menu.hidden = true; btnAngle.setAttribute('aria-expanded', 'false');
+  if (returnFocus) btnAngle.focus();
+}
+btnAngle.addEventListener('click', () => (menu.hidden ? openMenu() : closeMenu(false)));
+menu.addEventListener('keydown', (e) => {
+  const items = menuItems; const i = items.indexOf(document.activeElement);
+  if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeMenu(true); }
+  else if (e.key === 'Tab') closeMenu(false);
+});
+document.addEventListener('pointerdown', (e) => { if (!menu.hidden && !e.target.closest('.menu-wrap')) closeMenu(false); });
+
+// Layar penuh
+if (!document.fullscreenEnabled) btnFull.hidden = true;
+btnFull.addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+  else viewport.requestFullscreen().catch(() => { btnFull.hidden = true; });
+});
+document.addEventListener('fullscreenchange', () => {
+  btnFull.dataset.tip = document.fullscreenElement ? 'Keluar dari layar penuh' : 'Layar penuh';
+  btnFull.setAttribute('aria-label', btnFull.dataset.tip);
+});
+
+// Tooltip
+const tip = $('#tip');
+function showTip(el) {
+  tip.replaceChildren(el.dataset.tip);
+  if (el.dataset.key) { const k = document.createElement('kbd'); k.textContent = el.dataset.key; tip.append(k); }
+  tip.hidden = false;
+  const vr = viewport.getBoundingClientRect(), r = el.getBoundingClientRect();
+  const x = Math.max(8, Math.min(r.left - vr.left + r.width / 2 - tip.offsetWidth / 2, vr.width - tip.offsetWidth - 8));
+  tip.style.left = `${x}px`; tip.style.top = `${r.bottom - vr.top + 8}px`;
+}
+function hideTip() { tip.hidden = true; }
+for (const el of document.querySelectorAll('[data-tip]')) {
+  el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') showTip(el); });
+  el.addEventListener('pointerleave', hideTip);
+  el.addEventListener('focus', () => { if (el.matches(':focus-visible')) showTip(el); });
+  el.addEventListener('blur', hideTip);
+  el.addEventListener('click', hideTip);
+}
+
+// Klik dua kali: fokus ke titik di permukaan model
+const raycaster = new THREE.Raycaster(); const ndc = new THREE.Vector2();
+canvas.addEventListener('dblclick', (e) => {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  raycaster.setFromCamera(ndc, camera);
+  const hit = raycaster.intersectObject(model, true).find((h) => h.object.isMesh);
+  if (!hit) return;
+  setSpin(false);
+  const s = currentSpherical();
+  flyTo(hit.point, s.theta, s.phi, Math.max(controls.minDistance, s.radius * 0.7));
+});
+
+// Pintasan keyboard
+window.addEventListener('keydown', (e) => {
+  if (e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+  if (e.target.closest && e.target.closest('input, select, textarea, [role="menu"]')) return;
+  const k = e.key.toLowerCase();
+  if (k === 'r') setSpin(!controls.autoRotate);
+  else if (k === 'f') focusModel();
+  else if (k === 'w') setWire(!view.wire);
+  else if (k === 'g') setGrid(!view.grid);
+  else if (k === 'escape') closeMenu(true);
+  else return;
+  e.preventDefault();
+});
+
+// ---------- mulai ----------
+readTheme();
+resize();
+buildModel();
+placeInitial();
+setSpin(!reduceMotion);
+requestRender();
+</script>
+</body>
+</html>

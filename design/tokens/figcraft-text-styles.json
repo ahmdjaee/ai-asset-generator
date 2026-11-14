@@ -1,0 +1,142 @@
+[
+  {
+    "description": "Judul halaman besar",
+    "id": "S:1",
+    "name": "Display",
+    "style": {
+      "case": "original",
+      "font_family": "Inter",
+      "font_size": 24.0,
+      "font_style": "SemiBold",
+      "letter_spacing": { "unit": "percent", "value": -1.5 },
+      "line_height": { "unit": "pixels", "value": 32.0 }
+    },
+    "type": "text"
+  },
+  {
+    "description": "Judul panel/dialog",
+    "id": "S:2",
+    "name": "Title",
+    "style": {
+      "case": "original",
+      "font_family": "Inter",
+      "font_size": 18.0,
+      "font_style": "SemiBold",
+      "letter_spacing": { "unit": "percent", "value": -1.0 },
+      "line_height": { "unit": "pixels", "value": 26.0 }
+    },
+    "type": "text"
+  },
+  {
+    "description": "Judul kartu & bagian",
+    "id": "S:3",
+    "name": "Heading",
+    "style": {
+      "case": "original",
+      "font_family": "Inter",
+      "font_size": 15.0,
+      "font_style": "SemiBold",
+      "letter_spacing": { "unit": "percent", "value": -0.5 },
+      "line_height": { "unit": "pixels", "value": 22.0 }
+    },
+    "type": "text"
+  },
+  {
+    "description": "Teks percakapan & paragraf",
+    "id": "S:4",
+    "name": "Body",
+    "style": {
+      "case": "original",
+      "font_family": "Inter",
+      "font_size": 14.0,
+      "font_style": "Regular",
+      "letter_spacing": { "unit": "percent", "value": 0.0 },
+      "line_height": { "unit": "pixels", "value": 22.0 }
+    },
+    "type": "text"
+  },
+  {
+    "description": "Tombol md, label penting",
+    "id": "S:5",
+    "name": "Body Strong",
+    "style": {
+      "case": "original",
+      "font_family": "Inter",
+      "font_size": 14.0,
+      "font_style": "SemiBold",
+      "letter_spacing": { "unit": "percent", "value": 0.0 },
+      "line_height": { "unit": "pixels", "value": 20.0 }
+    },
+    "type": "text"
+  },
+  {
+    "description": "Tombol sm, tab, judul kecil",
+    "id": "S:6",
+    "name": "Label",
+    "style": {
+      "case": "original",
+      "font_family": "Inter",
+      "font_size": 13.0,
+      "font_style": "SemiBold",
+      "letter_spacing": { "unit": "percent", "value": 0.0 },
+      "line_height": { "unit": "pixels", "value": 18.0 }
+    },
+    "type": "text"
+  },
+  {
+    "description": "Teks UI sekunder",
+    "id": "S:7",
+    "name": "Small",
+    "style": {
+      "case": "original",
+      "font_family": "Inter",
+      "font_size": 13.0,
+      "font_style": "Regular",
+      "letter_spacing": { "unit": "percent", "value": 0.0 },
+      "line_height": { "unit": "pixels", "value": 18.0 }
+    },
+    "type": "text"
+  },
+  {
+    "description": "Metadata, keterangan",
+    "id": "S:8",
+    "name": "Caption",
+    "style": {
+      "case": "original",
+      "font_family": "Inter",
+      "font_size": 12.0,
+      "font_style": "Regular",
+      "letter_spacing": { "unit": "percent", "value": 0.0 },
+      "line_height": { "unit": "pixels", "value": 16.0 }
+    },
+    "type": "text"
+  },
+  {
+    "description": "Badge, angka statistik",
+    "id": "S:9",
+    "name": "Caption Strong",
+    "style": {
+      "case": "original",
+      "font_family": "Inter",
+      "font_size": 12.0,
+      "font_style": "SemiBold",
+      "letter_spacing": { "unit": "percent", "value": 0.0 },
+      "line_height": { "unit": "pixels", "value": 16.0 }
+    },
+    "type": "text"
+  },
+  {
+    "description": "Label bagian (huruf kapital)",
+    "id": "S:10",
+    "name": "Overline",
+    "style": {
+      "case": "upper",
+      "font_family": "Inter",
+      "font_size": 12.0,
+      "font_style": "Regular",
+      "letter_spacing": { "unit": "percent", "value": 0.0 },
+      "line_height": { "unit": "auto" }
+    },
+    "type": "text"
+  }
+]

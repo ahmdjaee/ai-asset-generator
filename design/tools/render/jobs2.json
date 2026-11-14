@@ -1,0 +1,6 @@
+[
+ {"name":"thumb-tree-autumn","model":"tree","kind":"final","w":560,"h":420,"margin":1.3,"over":{"leaf":{"color":"#D98A2B","roughness":0.85},"leaf2":{"color":"#C2631F","roughness":0.85}}},
+ {"name":"thumb-chair-white","model":"chair","kind":"final","w":560,"h":420,"margin":1.3,"over":{"woodLight":{"color":"#E6E2D8","roughness":0.55}}},
+ {"name":"thumb-mushroom-purple","model":"mushroom","kind":"final","w":560,"h":420,"margin":1.3,"over":{"red":{"color":"#7B5BC4","roughness":0.5},"cream":{"color":"#E9E1F5","roughness":0.7}}},
+ {"name":"thumb-canister-base","model":"canister","kind":"clay","w":560,"h":420,"margin":1.3}
+]

@@ -1,0 +1,19 @@
+[
+ {"name":"hero-dark-clay-wire","model":"chest","kind":"clay","wire":true,"w":1968,"h":1696,"bg":"dark","grid":"dark","offsetX":0.15,"margin":1.3},
+ {"name":"hero-dark-clay","model":"chest","kind":"clay","w":1968,"h":1696,"bg":"dark","grid":"dark","offsetX":0.15,"margin":1.3},
+ {"name":"hero-dark-final","model":"chest","kind":"final","w":1968,"h":1696,"bg":"dark","grid":"dark","offsetX":0.15,"margin":1.3},
+ {"name":"hero-light-final","model":"chest","kind":"final","w":1968,"h":1696,"bg":"light","grid":"light","offsetX":0.15,"margin":1.3},
+ {"name":"thumb-chest","model":"chest","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-chest-base","model":"chest","kind":"clay","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-barrel","model":"barrel","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-lantern","model":"lantern","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-chair","model":"chair","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-tree","model":"tree","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-rocks","model":"rocks","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-mushroom","model":"mushroom","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-sword","model":"sword","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-crate","model":"crate","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-canister","model":"canister","kind":"final","w":560,"h":420,"margin":1.3},
+ {"name":"thumb-crate-base","model":"crate","kind":"clay","w":560,"h":420,"margin":1.3},
+ {"name":"ref-sketch","model":"chest","kind":"clay","w":480,"h":360,"bg":"#E8E2D6","dir":[0.35,0.4,1.2],"margin":1.25}
+]
