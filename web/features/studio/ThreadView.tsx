@@ -159,7 +159,10 @@ function ThinkingBlock({
   );
 }
 
-/** Blok status berwarna (FigCraft "Blok error" #4058, "Blok batas pemakaian" #4068). */
+/**
+ * Blok status berwarna (FigCraft "Blok error" #4058, "Blok batas pemakaian" #4068, "Blok belum login" di frame
+ * Tahap 11 C).
+ */
 function Callout({
   tone,
   title,
@@ -207,7 +210,12 @@ function ErrorBlock({ block }: { block: Extract<ClaudeBlock, { kind: "error" }> 
       />
     );
   }
-  const copy = block.code === "TOOL_DENIED" ? errors.denied : errors.failed;
+  const copy =
+    block.code === "TOOL_DENIED"
+      ? errors.denied
+      : block.code === "AUTH_REQUIRED"
+        ? errors.authRequired
+        : errors.failed;
   return <Callout tone="danger" title={copy.title} description={copy.description} />;
 }
 

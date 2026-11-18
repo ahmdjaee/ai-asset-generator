@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/menu.tsx";
 import { Tooltip } from "@/components/ui/tooltip.tsx";
 import { t } from "@/i18n/id.ts";
+import { accountSummary, useAuthStatus } from "@/lib/health.ts";
 import { cn } from "@/lib/utils.ts";
 import { useTheme } from "@/theme.ts";
 import { isThemePreference } from "@/theme-script.ts";
@@ -76,11 +77,15 @@ function NavItem({
   );
 }
 
-/** Menu akun dari Avatar: chip akun, tautan Pengaturan, dan pilihan tema (gaya Menu sudut dengan centang). */
+/**
+ * Menu akun dari Avatar: chip akun (email dan paket dari `/api/health/auth`), tautan Pengaturan, dan pilihan tema (gaya
+ * Menu sudut dengan centang).
+ */
 function AccountMenu() {
   const navigate = useNavigate();
   const { preference, setPreference } = useTheme();
   const themeLabelId = useId();
+  const account = accountSummary(useAuthStatus().data);
   return (
     <Menu>
       <Tooltip label={t.account.menu} side="right">
@@ -90,7 +95,7 @@ function AccountMenu() {
       </Tooltip>
       <MenuContent side="right" align="end" className="w-55">
         <MenuLabel>
-          <AccountChip name={t.account.name} detail={t.account.detail} />
+          <AccountChip name={account.name} detail={account.detail} />
         </MenuLabel>
         <MenuSeparator />
         <MenuItem icon={Settings} onSelect={() => navigate("/pengaturan")}>

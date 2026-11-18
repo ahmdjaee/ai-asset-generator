@@ -10,14 +10,17 @@ import { TierInfo } from "@/components/Tier.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { notify } from "@/components/ui/toast.tsx";
+import { StatusBanners } from "@/features/status/StatusBanners.tsx";
 import { t } from "@/i18n/id.ts";
 import { useArrivalFocus } from "@/lib/arrival-focus.ts";
 import { assetBadge } from "@/lib/asset-status.ts";
 import { thumbUrl } from "@/lib/asset-urls.ts";
 import { useAssets } from "@/lib/assets.ts";
 import { useNow } from "@/lib/clock.tsx";
+import { useSettings } from "@/lib/settings.ts";
 import { formatRelativeTime } from "../../../shared/format.ts";
 import { DEFAULT_TIERS, type TierId } from "../../../shared/limits.ts";
+import { DEFAULT_TIER_ID } from "../../../shared/settings.ts";
 import { PromptComposer, useComposerDraft } from "./Composer.tsx";
 import { useCreateAsset } from "./queries.ts";
 
@@ -168,7 +171,11 @@ function RecentAssets() {
  */
 export function StudioNewPage() {
   const draft = useComposerDraft();
-  const [tier, setTier] = useState<TierId>("sedang");
+  const settings = useSettings().data;
+  // Pilihan pemilik di composer menang; sebelum memilih, tier bawaan dari Pengaturan.
+  const [picked, setTier] = useState<TierId | null>(null);
+  const tier = picked ?? settings?.defaultTier ?? DEFAULT_TIER_ID;
+  const budget = settings?.tiers[tier] ?? DEFAULT_TIERS[tier];
   const create = useCreateAsset();
   const navigate = useNavigate();
   const prompt = useRef<HTMLTextAreaElement>(null);
@@ -200,6 +207,7 @@ export function StudioNewPage() {
           <GuideDialog />
         </div>
       </Topbar>
+      <StatusBanners />
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto box-content flex w-full max-w-180 flex-col gap-7 px-4 pt-11 pb-16">
           <div className="flex flex-col items-center gap-2 text-center">
@@ -215,7 +223,7 @@ export function StudioNewPage() {
               onSubmit={submit}
               textareaRef={prompt}
             />
-            <TierInfo tier={tier} budget={DEFAULT_TIERS[tier]} />
+            <TierInfo tier={tier} budget={budget} />
             <Examples
               onPick={(text) => {
                 draft.setText(text);

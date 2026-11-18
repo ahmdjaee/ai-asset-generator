@@ -11,6 +11,7 @@ import { arrivalState } from "@/lib/arrival-focus.ts";
 import { ClockProvider } from "@/lib/clock.tsx";
 import { assetFixture, listFixture, listItemFixture, T0 } from "@/test-assets.ts";
 import { FakeClock } from "@/test-clock.ts";
+import { settingsFixture } from "@/test-health.ts";
 import { FakeServer } from "@/test-server.ts";
 import { jsonResponse, mockFetch, renderWithQuery } from "@/test-utils.tsx";
 import { DEFAULT_TIERS } from "../../../shared/limits.ts";
@@ -185,6 +186,19 @@ describe("Studio · baru", () => {
     expect(sent.getAll("files[]").map((file) => (file instanceof File ? file.name : file))).toEqual([
       "sketsa.png",
     ]);
+  });
+
+  test("tier awal dan info budget dari Pengaturan; pilihan di composer tetap menang setelah Pengaturan termuat", async () => {
+    const ringan = { ...DEFAULT_TIERS.ringan, triangles: { target: 2500, max: 3000 } };
+    server.on("GET", "/api/assets", listFixture([]));
+    server.on("GET", "/api/settings", {
+      settings: settingsFixture({ defaultTier: "ringan", tiers: { ...DEFAULT_TIERS, ringan } }),
+    });
+    const { user } = renderPage();
+    expect(await screen.findByText(tierSummary("ringan", ringan))).toBeDefined();
+    expect(screen.getByRole("radio", { name: "Ringan" }).getAttribute("aria-checked")).toBe("true");
+    await user.click(screen.getByRole("radio", { name: "Maksimal" }));
+    expect(screen.getByText(tierSummary("maksimal", DEFAULT_TIERS.maksimal))).toBeDefined();
   });
 
   test("gagal membuat aset: toast berisi pesan server, prompt tetap, halaman tidak berpindah", async () => {

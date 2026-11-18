@@ -229,7 +229,7 @@ describe("ThreadView", () => {
     expect(screen.getByText(t.build.running(t.build.stage.base, "v2"))).toBeDefined();
   });
 
-  test("blok error: batas pemakaian dengan jam reset, aksi ditolak, dan proses berhenti", () => {
+  test("blok error: batas pemakaian dengan jam reset, aksi ditolak, proses berhenti, dan belum login", () => {
     const resetsAt = T0 + 3_600_000;
     renderThread({
       items: [
@@ -238,6 +238,7 @@ describe("ThreadView", () => {
           { kind: "error", key: "e2", code: "USAGE_LIMIT", message: "limit", resetsAt: null },
           { kind: "error", key: "e3", code: "TOOL_DENIED", message: "denied", resetsAt: null },
           { kind: "error", key: "e4", code: "TURN_FAILED", message: "crash", resetsAt: null },
+          { kind: "error", key: "e5", code: "AUTH_REQUIRED", message: "login", resetsAt: null },
         ]),
       ],
     });
@@ -247,6 +248,9 @@ describe("ThreadView", () => {
     expect(screen.getByText(errors.usageLimit.unknownReset)).toBeDefined();
     expect(screen.getByText(errors.denied.title)).toBeDefined();
     expect(screen.getByText(errors.failed.title)).toBeDefined();
+    // Belum login (Tahap 11): petunjuk login, lalu kirim pesan untuk melanjutkan.
+    expect(screen.getByText(errors.authRequired.title)).toBeDefined();
+    expect(screen.getByText(errors.authRequired.description)).toBeDefined();
     // Pesan mentah dari SDK tidak ditampilkan.
     expect(screen.queryByText("crash")).toBeNull();
   });

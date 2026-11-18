@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { notify } from "@/components/ui/toast.tsx";
 import { Tooltip } from "@/components/ui/tooltip.tsx";
+import { StatusBanners } from "@/features/status/StatusBanners.tsx";
 import { t } from "@/i18n/id.ts";
 import { ApiError } from "@/lib/api.ts";
 import { arrivalState } from "@/lib/arrival-focus.ts";
@@ -32,7 +33,7 @@ import type { DetailPanelData } from "../viewer/DetailPanel.tsx";
 import type { ViewerHandle } from "../viewer/Viewer.tsx";
 import { ChangeShapeDialog } from "./ChangeShapeDialog.tsx";
 import { DockComposer, useComposerDraft } from "./Composer.tsx";
-import { Dock, type DockActions, dockAnnouncement, dockState } from "./Dock.tsx";
+import { DOCK_PENDING, Dock, type DockActions, dockAnnouncement, dockState } from "./Dock.tsx";
 import { detailPanelData, WEB_FILE } from "./detail-panel.ts";
 import {
   type AnswerPayload,
@@ -233,10 +234,9 @@ function Session({
     finish: () => run({ type: "finish" }),
     revise: () => composerInput.current?.focus(),
     changeShape: () => setChangingShape(true),
-    pending:
-      pendingAction === "stop" || pendingAction === "approve" || pendingAction === "finish"
-        ? pendingAction
-        : null,
+    retry: () => run({ type: "retry" }),
+    resume: () => run({ type: "resume" }),
+    pending: DOCK_PENDING.find((candidate) => candidate === pendingAction) ?? null,
   };
 
   const send = () => {
@@ -326,6 +326,7 @@ function Session({
         </div>
       </Topbar>
       <ReconnectBanner />
+      <StatusBanners />
       <div className="flex min-h-0 flex-1">
         <h1 className="sr-only">{asset.name}</h1>
         <section

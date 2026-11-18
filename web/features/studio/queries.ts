@@ -121,7 +121,9 @@ export type AssetAction =
   | Readonly<{ type: "approve" }>
   | Readonly<{ type: "finish" }>
   | Readonly<{ type: "change_shape"; text: string }>
-  | Readonly<{ type: "stop" }>;
+  | Readonly<{ type: "stop" }>
+  | Readonly<{ type: "retry" }>
+  | Readonly<{ type: "resume" }>;
 
 export type AnswerPayload = Readonly<
   Record<string, Readonly<{ selected: readonly string[]; other?: string }>>
@@ -156,6 +158,10 @@ async function runAction(assetId: string, action: AssetAction) {
       return assets["change-shape"].$post({ param, json: { text: action.text } });
     case "stop":
       return assets.stop.$post({ param });
+    case "retry":
+      return assets.retry.$post({ param });
+    case "resume":
+      return assets.resume.$post({ param });
   }
 }
 

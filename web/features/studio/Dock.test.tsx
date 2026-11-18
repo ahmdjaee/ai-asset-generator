@@ -36,10 +36,15 @@ describe("dockState", () => {
     expect(dockState(asset("BASE_REVIEW", "idle", 2), 2)).toEqual({ kind: "baseReview", version: 2 });
     expect(dockState(asset("TEXTURE_REVIEW", "idle", 3), 3)).toEqual({ kind: "finalReview", version: 3 });
     expect(dockState(asset("DONE", "idle", 3), 3)).toEqual({ kind: "done", version: 3 });
-    expect(dockState(asset("BASE_WORKING", "interrupted", 2), 2)).toEqual({ kind: "none" });
-    expect(dockState(asset("BASE_WORKING", "failed", 2), 2)).toEqual({ kind: "none" });
     expect(dockState(asset("BASE_WORKING", "idle", 1), 1)).toEqual({ kind: "none" });
     expect(dockState(asset("BASE_REVIEW", "idle", null), null)).toEqual({ kind: "none" });
+  });
+
+  test("giliran gagal atau terputus saat tahap masih dikerjakan (juga tanpa versi): Coba lagi / Lanjutkan", () => {
+    expect(dockState(asset("BASE_WORKING", "failed", 2), 2)).toEqual({ kind: "failed" });
+    expect(dockState(asset("BRIEFING", "failed", null), null)).toEqual({ kind: "failed" });
+    expect(dockState(asset("TEXTURE_WORKING", "interrupted", 2), 3)).toEqual({ kind: "interrupted" });
+    expect(dockState(asset("BRIEFING", "interrupted", null), null)).toEqual({ kind: "interrupted" });
   });
 
   test("giliran gagal atau terputus setelah versi dikirim: kartu review tetap ada (server tetap menerima aksinya)", () => {
@@ -61,6 +66,8 @@ function actions(patch: Partial<DockActions> = {}): DockActions {
     finish: mock(),
     revise: mock(),
     changeShape: mock(),
+    retry: mock(),
+    resume: mock(),
     pending: null,
     ...patch,
   };
@@ -133,6 +140,25 @@ describe("Dock", () => {
     const link = within(card).getByRole("link", { name: t.dock.done.download });
     expect(link.getAttribute("href")).toBe("/api/assets/peti/versions/3/web.glb");
     expect(link.getAttribute("download")).toBe("peti-harta-kayu-v3.glb");
+  });
+
+  test("giliran gagal: Coba lagi (memuat saat dikirim); terputus: Lanjutkan", async () => {
+    const sending = renderDock({ kind: "failed" }, actions({ pending: "retry" }));
+    const failed = screen.getByRole("region", { name: t.dock.failed.title });
+    expect(within(failed).getByText(t.dock.failed.description)).toBeDefined();
+    const retry = within(failed).getByRole("button", { name: t.dock.failed.retry });
+    expect(retry.getAttribute("aria-busy")).toBe("true");
+    sending.unmount();
+    const fresh = actions();
+    const { user, unmount } = renderDock({ kind: "failed" }, fresh);
+    await user.click(screen.getByRole("button", { name: t.dock.failed.retry }));
+    unmount();
+    expect(fresh.retry).toHaveBeenCalledTimes(1);
+    renderDock({ kind: "interrupted" }, fresh);
+    const interrupted = screen.getByRole("region", { name: t.dock.interrupted.title });
+    expect(within(interrupted).getByText(t.dock.interrupted.description)).toBeDefined();
+    await user.click(within(interrupted).getByRole("button", { name: t.dock.interrupted.resume }));
+    expect(fresh.resume).toHaveBeenCalledTimes(1);
   });
 
   test("tanpa kartu: hanya composer", () => {

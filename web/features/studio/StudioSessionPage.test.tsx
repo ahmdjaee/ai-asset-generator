@@ -285,6 +285,42 @@ describe("Studio · sesi", () => {
     expect(server.calls("POST", "/api/assets/peti/stop")).toHaveLength(1);
   });
 
+  test("giliran gagal saat bentuk dasar dikerjakan: kartu Coba lagi mengirim retry; terputus: Lanjutkan mengirim resume", async () => {
+    serve(
+      detailFixture({
+        asset: assetFixture({ status: "BASE_WORKING", runState: "failed", currentVersion: 1 }),
+      }),
+      reviewThread(),
+    );
+    server.on("POST", "/api/assets/peti/retry", {
+      asset: assetFixture({ status: "BASE_WORKING", runState: "running", currentVersion: 1 }),
+    });
+    server.on("POST", "/api/assets/peti/resume", {
+      asset: assetFixture({ status: "BASE_WORKING", runState: "running", currentVersion: 1 }),
+    });
+    const { user } = await renderSession();
+    expect(await screen.findByRole("heading", { name: t.dock.failed.title })).toBeDefined();
+    await user.click(screen.getByRole("button", { name: t.dock.failed.retry }));
+    expect(await screen.findByRole("heading", { name: t.dock.working.title })).toBeDefined();
+    expect(server.calls("POST", "/api/assets/peti/retry")).toHaveLength(1);
+    act(() =>
+      realtime.emit(TOPIC, {
+        type: "thread",
+        stored: stored({
+          type: "state",
+          status: "BASE_WORKING",
+          runState: "interrupted",
+          lastError: null,
+          approvedBaseVersion: null,
+          currentVersion: 1,
+          buildsLeft: 6,
+        }),
+      }),
+    );
+    await user.click(await screen.findByRole("button", { name: t.dock.interrupted.resume }));
+    await waitFor(() => expect(server.calls("POST", "/api/assets/peti/resume")).toHaveLength(1));
+  });
+
   test("review final: Ubah bentuk dasar membuka dialog yang mengirim change-shape", async () => {
     serve(
       detailFixture({

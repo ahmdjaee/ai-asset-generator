@@ -10,6 +10,7 @@ import { Dropdown } from "@/components/ui/dropdown.tsx";
 import { SearchField } from "@/components/ui/search-field.tsx";
 import { Segmented } from "@/components/ui/segmented.tsx";
 import { notify } from "@/components/ui/toast.tsx";
+import { StatusBanners } from "@/features/status/StatusBanners.tsx";
 import { t } from "@/i18n/id.ts";
 import { useArrivalFocus } from "@/lib/arrival-focus.ts";
 import { assetBadge } from "@/lib/asset-status.ts";
@@ -497,6 +498,7 @@ export function GudangPage() {
           <Link to="/">{t.gudang.newAsset}</Link>
         </Button>
       </Topbar>
+      <StatusBanners />
       <div className="relative flex min-h-0 flex-1 flex-col">
         {/* Mode pilih: ruang di bawah isi supaya bar melayang tidak menutupi baris terakhir. */}
         <div

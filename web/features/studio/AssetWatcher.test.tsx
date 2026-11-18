@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { act, screen, waitFor, waitForElementToBeRemoved, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { MemoryRouter, type NavigateFunction, useNavigate } from "react-router";
+import { MemoryRouter, type NavigateFunction, useLocation, useNavigate } from "react-router";
 import { Toaster } from "@/components/ui/toast.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip.tsx";
 import { useAssets } from "@/lib/assets.ts";
@@ -10,31 +10,61 @@ import { detailFixture, listFixture, listItemFixture } from "@/test-assets.ts";
 import { FakeRealtime } from "@/test-realtime.ts";
 import { FakeServer } from "@/test-server.ts";
 import { jsonResponse, mockFetch, renderWithQuery } from "@/test-utils.tsx";
-import { AssetWatcher, statusToasts } from "./AssetWatcher.tsx";
+import type { AssetStatus, RunState } from "../../../shared/asset.ts";
+import { AssetWatcher, assetChanges, statusToasts } from "./AssetWatcher.tsx";
 import { useAssetDeleted, useAssetDetail } from "./queries.ts";
 
 describe("toast perubahan aset", () => {
+  const snap = (status: AssetStatus, runState: RunState = "idle") => ({ status, runState });
+  const item = (id: string, name: string, status: AssetStatus, runState: RunState = "idle") => ({
+    id,
+    name,
+    status,
+    runState,
+  });
+
   test("hanya aset lain yang baru masuk review atau selesai; daftar pertama tidak memberi toast", () => {
     const before = new Map([
-      ["a", "BASE_WORKING" as const],
-      ["b", "TEXTURE_REVIEW" as const],
-      ["c", "BASE_WORKING" as const],
-      ["d", "BASE_REVIEW" as const],
-      ["f", "BASE_REVIEW" as const],
+      ["a", snap("BASE_WORKING", "running")],
+      ["b", snap("TEXTURE_REVIEW")],
+      ["c", snap("BASE_WORKING", "running")],
+      ["d", snap("BASE_REVIEW")],
+      ["f", snap("BASE_REVIEW")],
     ]);
     const now = [
-      { id: "a", name: "Lentera", status: "BASE_REVIEW" as const },
-      { id: "b", name: "Peti", status: "DONE" as const },
-      { id: "c", name: "Dibuka", status: "BASE_REVIEW" as const },
-      { id: "d", name: "Tetap", status: "BASE_REVIEW" as const },
-      { id: "e", name: "Baru", status: "BASE_REVIEW" as const },
-      { id: "f", name: "Direvisi", status: "BASE_WORKING" as const },
+      item("a", "Lentera", "BASE_REVIEW"),
+      item("b", "Peti", "DONE"),
+      item("c", "Dibuka", "BASE_REVIEW"),
+      item("d", "Tetap", "BASE_REVIEW"),
+      item("e", "Baru", "BASE_REVIEW"),
+      item("f", "Direvisi", "BASE_WORKING", "running"),
     ];
     expect(statusToasts(before, now, "c")).toEqual([
       { kind: "review", assetId: "a", name: "Lentera" },
       { kind: "done", assetId: "b", name: "Peti" },
     ]);
     expect(statusToasts(null, now, null)).toEqual([]);
+  });
+
+  test("proses yang baru gagal atau menunggu jawaban juga dikabarkan; yang sudah begitu tidak diulang", () => {
+    const before = new Map([
+      ["a", snap("BASE_WORKING", "running")],
+      ["b", snap("TEXTURE_WORKING", "running")],
+      ["c", snap("BASE_WORKING", "failed")],
+      ["d", snap("BRIEFING", "running")],
+    ]);
+    const now = [
+      item("a", "Lentera", "BASE_WORKING", "failed"),
+      item("b", "Peti", "TEXTURE_WORKING", "waiting_user"),
+      item("c", "Kursi", "BASE_WORKING", "failed"),
+      item("d", "Dibuka", "BRIEFING", "waiting_user"),
+    ];
+    expect(statusToasts(before, now, "d")).toEqual([
+      { kind: "failed", assetId: "a", name: "Lentera" },
+      { kind: "question", assetId: "b", name: "Peti" },
+    ]);
+    // Notifikasi browser (tab tidak dilihat) juga untuk aset yang sedang dibuka.
+    expect(assetChanges(before, now).map((change) => change.assetId)).toEqual(["a", "b", "d"]);
   });
 });
 
@@ -55,8 +85,12 @@ afterEach(() => {
 
 let navigate: NavigateFunction = () => undefined;
 
+let currentPath = "";
+const location = () => currentPath;
+
 function CaptureNavigate() {
   navigate = useNavigate();
+  currentPath = useLocation().pathname;
   return null;
 }
 
@@ -126,6 +160,54 @@ describe("AssetWatcher", () => {
     expect(await within(toasts()).findByText("Lentera besi siap direview")).toBeDefined();
     expect(within(toasts()).queryByText("Peti harta kayu selesai")).toBeNull();
     expect(server.calls("GET", "/api/assets")).toHaveLength(2);
+  });
+
+  test("tab tidak dilihat + izin diberikan: notifikasi browser, juga untuk aset yang dibuka; klik membuka sesinya", async () => {
+    const shown: Array<{ title: string; target: EventTarget }> = [];
+    class FakeNotification extends EventTarget {
+      static permission: NotificationPermission = "granted";
+      constructor(title: string) {
+        super();
+        shown.push({ title, target: this });
+      }
+      close() {
+        return undefined;
+      }
+    }
+    Object.defineProperty(window, "Notification", { value: FakeNotification, configurable: true });
+    Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true });
+    try {
+      server.on(
+        "GET",
+        "/api/assets",
+        listFixture([
+          listItemFixture({ id: "peti", name: "Peti kayu", status: "BASE_WORKING", runState: "running" }),
+          listItemFixture({ id: "kursi", name: "Kursi", status: "BASE_WORKING", runState: "running" }),
+        ]),
+      );
+      renderWatcher("/studio/peti");
+      await waitFor(() => expect(server.calls("GET", "/api/assets")).toHaveLength(1));
+      server.on(
+        "GET",
+        "/api/assets",
+        listFixture([
+          listItemFixture({ id: "peti", name: "Peti kayu", status: "BASE_REVIEW" }),
+          listItemFixture({ id: "kursi", name: "Kursi", status: "BASE_WORKING", runState: "failed" }),
+        ]),
+      );
+      act(() => realtime.emit("global", { type: "asset", assetId: "peti", change: "updated" }));
+      await waitFor(() =>
+        expect(shown.map((entry) => entry.title)).toEqual(["Peti kayu siap direview", "Kursi gagal"]),
+      );
+      // Toast hanya untuk aset lain.
+      expect(await within(toasts()).findByText("Kursi gagal")).toBeDefined();
+      expect(within(toasts()).queryByText("Peti kayu siap direview")).toBeNull();
+      act(() => void shown[1]?.target.dispatchEvent(new Event("click")));
+      await waitFor(() => expect(location()).toBe("/studio/kursi"));
+    } finally {
+      Reflect.deleteProperty(window, "Notification");
+      Reflect.deleteProperty(document, "visibilityState");
+    }
   });
 
   test("toast aset yang lalu dibuka (mis. aset baru selesai dibangun sebelum navigasi) ditutup", async () => {

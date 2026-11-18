@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createMemoryRouter } from "react-router";
@@ -6,11 +6,12 @@ import { RouterProvider } from "react-router/dom";
 import { TooltipProvider } from "@/components/ui/tooltip.tsx";
 import { RealtimeProvider } from "@/lib/realtime-context.tsx";
 import { assetFixture, detailFixture, listFixture, listItemFixture } from "@/test-assets.ts";
+import { healthResponse, TEST_EMAIL } from "@/test-health.ts";
 import { FakeRealtime } from "@/test-realtime.ts";
 import { jsonResponse, mockFetch, renderWithQuery } from "@/test-utils.tsx";
 import { createThemeStore, ThemeStoreContext } from "@/theme.ts";
 import { PREFERS_LIGHT_QUERY } from "@/theme-script.ts";
-import { routes } from "./routes.tsx";
+import { buildRoutes, pageRoutes, routes } from "./routes.tsx";
 
 let restoreFetch: () => void = () => undefined;
 
@@ -18,7 +19,7 @@ beforeEach(() => {
   const spy = mockFetch((path) =>
     path === "/api/assets"
       ? jsonResponse(listFixture(["a", "b", "c"].map((id) => listItemFixture({ id, name: `Aset ${id}` }))))
-      : jsonResponse({}),
+      : jsonResponse(healthResponse(path) ?? {}),
   );
   restoreFetch = () => spy.mockRestore();
 });
@@ -40,8 +41,8 @@ function freshThemeStore() {
   });
 }
 
-function renderAt(path: string) {
-  const router = createMemoryRouter(routes, { initialEntries: [path] });
+function renderAt(path: string, appRoutes = routes) {
+  const router = createMemoryRouter(appRoutes, { initialEntries: [path] });
   renderWithQuery(
     <ThemeStoreContext value={freshThemeStore()}>
       <RealtimeProvider client={new FakeRealtime()}>
@@ -52,6 +53,11 @@ function renderAt(path: string) {
     </ThemeStoreContext>,
   );
   return { user: userEvent.setup(), router };
+}
+
+/** Halaman uji yang selalu gagal dirender. */
+function Broken(): never {
+  throw new Error("render gagal");
 }
 
 const rail = () => screen.getByRole("navigation", { name: "Navigasi utama" });
@@ -122,7 +128,11 @@ describe("kerangka app", () => {
     within(rail()).getByRole("button", { name: "Akun" }).focus();
     await user.keyboard("{Enter}");
     const menu = await screen.findByRole("menu");
+    // Chip akun dari `/api/health/auth`; email dan paket disembunyikan sementara (permintaan pemilik).
+    expect(await within(menu).findByText("Login lewat Claude Code")).toBeDefined();
     expect(within(menu).getByText("Akun Claude")).toBeDefined();
+    expect(within(menu).queryByText(TEST_EMAIL)).toBeNull();
+    expect(within(menu).queryByText(/Paket Max/)).toBeNull();
     const themes = within(menu).getByRole("group", { name: "Tema" });
     expect(within(themes).getByRole("menuitemradio", { name: "Gelap" }).getAttribute("aria-checked")).toBe(
       "true",
@@ -149,6 +159,27 @@ describe("kerangka app", () => {
     await user.tab();
     expect(document.activeElement?.textContent).toBe("Lewati ke konten utama");
     expect(document.activeElement?.getAttribute("href")).toBe("#konten");
+  });
+
+  test("halaman yang error: kerangka app tetap ada, halaman error dengan Muat ulang; pindah halaman memulihkan", async () => {
+    const spy = spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const { user, router } = renderAt(
+        "/rusak",
+        buildRoutes([{ path: "rusak", Component: Broken }, ...pageRoutes]),
+      );
+      expect(
+        await screen.findByRole("heading", { level: 1, name: "Halaman ini gagal ditampilkan" }),
+      ).toBeDefined();
+      expect(screen.getByRole("button", { name: "Muat ulang" })).toBeDefined();
+      // Rel tetap bisa dipakai untuk pindah ke halaman lain.
+      await user.click(within(rail()).getByRole("link", { name: "Gudang" }));
+      expect(router.state.location.pathname).toBe("/gudang");
+      expect(await screen.findByRole("heading", { level: 1, name: "Gudang" })).toBeDefined();
+      expect(screen.queryByRole("heading", { name: "Halaman ini gagal ditampilkan" })).toBeNull();
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   test("alamat yang tidak ada → halaman 404 dengan jalan kembali ke Studio", async () => {

@@ -10,6 +10,7 @@ import { TierIndicator } from "@/components/Tier.tsx";
 import { Badge } from "@/components/ui/badge.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { notify } from "@/components/ui/toast.tsx";
+import { StatusBanners } from "@/features/status/StatusBanners.tsx";
 import { t } from "@/i18n/id.ts";
 import { ApiError } from "@/lib/api.ts";
 import { arrivalState } from "@/lib/arrival-focus.ts";
@@ -190,6 +191,7 @@ function Detail({
           <AssetActionsMenu target={target} onAction={actions.run} omit={["studio", "export"]} />
         </div>
       </Topbar>
+      <StatusBanners />
       <div className="flex min-h-0 flex-1">
         <h1 className="sr-only">{asset.name}</h1>
         <AssetInfoPanel asset={asset} attachments={attachments} versionCount={versions.length} now={now} />

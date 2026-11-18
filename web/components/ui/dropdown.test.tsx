@@ -56,4 +56,25 @@ describe("Dropdown", () => {
     await user.keyboard("{ArrowDown}{Enter}");
     expect(onChange).toHaveBeenCalledWith("ringan");
   });
+
+  test("tanpa awalan: nama dari `label` + nilai, pilihan kosong redup, pemicu selebar sel", async () => {
+    const onChange = mock();
+    const { user } = renderUi(
+      <Dropdown
+        label="Normal map, Ringan"
+        value="none"
+        options={[
+          { value: "none", label: "Tidak ada", muted: true },
+          { value: "1024", label: "1024 px" },
+        ]}
+        onValueChange={onChange}
+      />,
+    );
+    const trigger = screen.getByRole("button", { name: "Normal map, Ringan: Tidak ada" });
+    expect(trigger.className).toContain("w-full");
+    expect(screen.getByText("Tidak ada").className).toContain("text-text-secondary");
+    await user.click(trigger);
+    await user.click(screen.getByRole("menuitemradio", { name: "1024 px" }));
+    expect(onChange).toHaveBeenCalledWith("1024");
+  });
 });

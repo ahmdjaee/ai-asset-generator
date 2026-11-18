@@ -1,5 +1,6 @@
 import {
   Check,
+  CircleAlert,
   CircleCheck,
   CircleHelp,
   Cuboid,
@@ -10,6 +11,7 @@ import {
   Pencil,
   RotateCcw,
   Square,
+  TriangleAlert,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button.tsx";
@@ -25,6 +27,8 @@ export type DockState =
   | Readonly<{ kind: "baseReview"; version: number }>
   | Readonly<{ kind: "finalReview"; version: number }>
   | Readonly<{ kind: "done"; version: number }>
+  | Readonly<{ kind: "failed" }>
+  | Readonly<{ kind: "interrupted" }>
   | Readonly<{ kind: "none" }>;
 
 const TEXTURE_STATUSES: ReadonlySet<AssetStatus> = new Set(["TEXTURE_WORKING", "TEXTURE_REVIEW", "DONE"]);
@@ -34,8 +38,9 @@ const TEXTURE_STATUSES: ReadonlySet<AssetStatus> = new Set(["TEXTURE_WORKING", "
  * - Claude bekerja atau menunggu jawaban: kartu proses atau kartu menunggu.
  * - Selain itu kartu review dan selesai mengikuti status, juga bila giliran gagal atau terputus setelah versi dikirim
  *   (mis. batas pemakaian, server berhenti): server tetap menerima Setujui dan Selesai.
- * - Tahap yang masih dikerjakan tanpa proses berjalan (build gagal, terputus) dan aset tanpa versi hanya menampilkan
- *   composer; thread menjelaskan apa yang terjadi.
+ * - Tahap yang masih dikerjakan (juga tanpa versi) setelah giliran gagal: kartu "Coba lagi"; setelah server berhenti
+ *   di tengah giliran: kartu "Lanjutkan" (frame Tahap 11 C2). Penyebabnya dijelaskan di thread.
+ * - Selain itu hanya composer.
  */
 export function dockState(
   asset: Readonly<{ status: AssetStatus; runState: RunState; currentVersion: number | null }>,
@@ -49,11 +54,14 @@ export function dockState(
     };
   }
   if (asset.runState === "waiting_user") return { kind: "waiting" };
-  if (asset.currentVersion === null) return { kind: "none" };
   const version = asset.currentVersion;
-  if (asset.status === "BASE_REVIEW") return { kind: "baseReview", version };
-  if (asset.status === "TEXTURE_REVIEW") return { kind: "finalReview", version };
-  if (asset.status === "DONE") return { kind: "done", version };
+  if (version !== null) {
+    if (asset.status === "BASE_REVIEW") return { kind: "baseReview", version };
+    if (asset.status === "TEXTURE_REVIEW") return { kind: "finalReview", version };
+    if (asset.status === "DONE") return { kind: "done", version };
+  }
+  if (asset.runState === "failed") return { kind: "failed" };
+  if (asset.runState === "interrupted") return { kind: "interrupted" };
   return { kind: "none" };
 }
 
@@ -70,6 +78,10 @@ export function dockAnnouncement(state: DockState): string {
       return t.dock.finalReview.title(`v${state.version}`);
     case "done":
       return t.dock.done.title(`v${state.version}`);
+    case "failed":
+      return t.dock.failed.title;
+    case "interrupted":
+      return t.dock.interrupted.title;
     case "none":
       return "";
   }
@@ -79,6 +91,7 @@ const TONES = {
   accent: "bg-accent-soft text-accent-text",
   warning: "bg-warning-soft text-warning-text",
   success: "bg-success-soft text-success-text",
+  danger: "bg-danger-soft text-danger-text",
 } as const;
 
 /**
@@ -169,14 +182,19 @@ function StopButton({ stopping, onStop }: { stopping: boolean; onStop: () => voi
   );
 }
 
+export const DOCK_PENDING = ["stop", "approve", "finish", "retry", "resume"] as const;
+export type DockPending = (typeof DOCK_PENDING)[number];
+
 export type DockActions = Readonly<{
   stop: () => void;
   approve: () => void;
   finish: () => void;
   revise: () => void;
   changeShape: () => void;
+  retry: () => void;
+  resume: () => void;
   /** Aksi yang sedang dikirim ke server (tombolnya menampilkan state memuat). */
-  pending: "stop" | "approve" | "finish" | null;
+  pending: DockPending | null;
 }>;
 
 /**
@@ -248,6 +266,48 @@ function DockCardFor({
           title={dock.waiting.title}
           description={dock.waiting.description}
           trailing={<StopButton stopping={actions.pending === "stop"} onStop={actions.stop} />}
+        />
+      );
+    case "failed":
+      return (
+        <DockCard
+          compact
+          tone="danger"
+          icon={CircleAlert}
+          title={dock.failed.title}
+          description={dock.failed.description}
+          trailing={
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={RotateCcw}
+              loading={actions.pending === "retry"}
+              onClick={actions.retry}
+            >
+              {dock.failed.retry}
+            </Button>
+          }
+        />
+      );
+    case "interrupted":
+      return (
+        <DockCard
+          compact
+          tone="warning"
+          icon={TriangleAlert}
+          title={dock.interrupted.title}
+          description={dock.interrupted.description}
+          trailing={
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={RotateCcw}
+              loading={actions.pending === "resume"}
+              onClick={actions.resume}
+            >
+              {dock.interrupted.resume}
+            </Button>
+          }
         />
       );
     case "baseReview":

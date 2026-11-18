@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button.tsx";
 import { t, tSmoke } from "@/i18n/id.ts";
 import type { AskQuestion } from "../../../shared/agent-events.ts";
 import petiFinal from "../../../tests/fixtures/glb/textured/peti.glb?url";
+import { StatusBannerRegion, StatusNotice } from "../status/StatusBanners.tsx";
 import { ChangeShapeDialog } from "../studio/ChangeShapeDialog.tsx";
 import { DockComposer, useComposerDraft } from "../studio/Composer.tsx";
 import { Dock, type DockActions, type DockState } from "../studio/Dock.tsx";
@@ -84,6 +85,8 @@ const DOCK_ACTIONS: DockActions = {
   finish: ignore,
   revise: ignore,
   changeShape: ignore,
+  retry: ignore,
+  resume: ignore,
   pending: null,
 };
 
@@ -93,6 +96,8 @@ const DOCK_STATES: readonly DockState[] = [
   { kind: "baseReview", version: 1 },
   { kind: "finalReview", version: 1 },
   { kind: "done", version: 1 },
+  { kind: "failed" },
+  { kind: "interrupted" },
 ];
 
 function DockCards() {
@@ -193,6 +198,7 @@ function threadItems(): readonly ThreadItem[] {
       blocks: [
         { kind: "error", key: "e1", code: "TURN_FAILED", message: "", resetsAt: null },
         { kind: "error", key: "e2", code: "USAGE_LIMIT", message: "", resetsAt: resetTime() },
+        { kind: "error", key: "e3", code: "AUTH_REQUIRED", message: "", resetsAt: null },
         { kind: "notice", key: "n1", text: s.notice },
         { kind: "stopped", key: "s1" },
         { kind: "thinking", key: "th2", text: "", durationMs: null, live: true },
@@ -269,6 +275,28 @@ function Banner() {
   );
 }
 
+/** Banner akun dan runtime (frame "Tahap 11 · Pengaturan & state khusus" A–B), dalam satu live region seperti di app. */
+function StatusNotices() {
+  const action = (label: string) => (
+    <Button variant="ghost" size="sm" onClick={ignore}>
+      {label}
+    </Button>
+  );
+  return (
+    <Section title={s.sections.statusBanners}>
+      <div className="flex max-w-180 flex-col overflow-hidden rounded-xl border border-border-default">
+        <StatusBannerRegion>
+          <StatusNotice tone="warning" text={t.banners.loggedOut} action={action(t.banners.recheck)} />
+          <StatusNotice tone="danger" text={t.banners.apiKey} action={action(t.banners.recheck)} />
+          <StatusNotice tone="warning" text={t.banners.imageMissing} action={action(t.banners.build)} />
+          <StatusNotice tone="progress" text={t.banners.building} />
+          <StatusNotice tone="danger" text={t.banners.buildFailed} action={action(t.banners.openSettings)} />
+        </StatusBannerRegion>
+      </div>
+    </Section>
+  );
+}
+
 /** Komponen Studio Tahap 9 di galeri `/_komponen`, dikelompokkan seperti FigCraft "Tahap 9 · komponen Studio". */
 export function StudioGallery() {
   return (
@@ -279,6 +307,7 @@ export function StudioGallery() {
       <ThreadBlocks />
       <Detail />
       <Banner />
+      <StatusNotices />
     </>
   );
 }

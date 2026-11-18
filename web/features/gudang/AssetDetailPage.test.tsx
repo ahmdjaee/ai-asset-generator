@@ -251,7 +251,8 @@ describe("Detail aset", () => {
     fail = false;
     await user.click(screen.getByRole("button", { name: t.assetDetail.error.retry }));
     expect(await screen.findByRole("heading", { level: 1, name: "Peti harta kayu" })).toBeDefined();
-    if (screen.queryByRole("status") !== null)
-      await waitForElementToBeRemoved(() => screen.queryByRole("status"));
+    // Placeholder viewer lazy (live region banner status selalu ada, jadi dicari lewat teksnya).
+    if (screen.queryByText(t.viewer.loading) !== null)
+      await waitForElementToBeRemoved(() => screen.queryByText(t.viewer.loading));
   });
 });

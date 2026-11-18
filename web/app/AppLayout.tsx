@@ -1,5 +1,6 @@
 import { Outlet } from "react-router";
 import { buttonVariants } from "@/components/ui/button.tsx";
+import { StatusWatcher } from "@/features/status/StatusWatcher.tsx";
 import { AssetWatcher } from "@/features/studio/AssetWatcher.tsx";
 import { t } from "@/i18n/id.ts";
 import { useStudioBusy } from "@/lib/assets.ts";
@@ -25,6 +26,7 @@ export function AppLayout() {
         {t.shell.skipToContent}
       </a>
       <AssetWatcher />
+      <StatusWatcher />
       <Rail studioBusy={busy} />
       <main id="konten" tabIndex={-1} className="flex min-w-0 flex-1 flex-col outline-none">
         <Outlet />

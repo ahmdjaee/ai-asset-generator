@@ -38,15 +38,18 @@ export function TierIndicator({ tier, className }: { tier: TierId; className?: s
 export function TierPicker({
   value,
   onValueChange,
+  label = t.tier.label,
   className,
 }: {
   value: TierId;
   onValueChange: (tier: TierId) => void;
+  /** Nama grup untuk pembaca layar (Pengaturan: "Tier bawaan"). */
+  label?: string;
   className?: string;
 }) {
   return (
     <Segmented
-      label={t.tier.label}
+      label={label}
       value={value}
       onValueChange={onValueChange}
       options={TIER_IDS.map((tier) => ({ value: tier, label: <TierIndicator tier={tier} /> }))}
