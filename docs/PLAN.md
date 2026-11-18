@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| **Tahap aktif** | **Tahap 11 — Pengaturan & state khusus** |
-| Status tahap aktif | belum mulai (menunggu pemilik) |
-| Diperbarui | 14 Nov 2026 |
+| **Tahap aktif** | **Tahap 12 — Pengerasan & rilis lokal (M2)** |
+| Status tahap aktif | menunggu review |
+| Diperbarui | 18 Nov 2026 |
 
 > **Agent:** baca [`../AGENTS.md`](../AGENTS.md) lebih dulu.
 > - Kerjakan **hanya** tahap aktif.
@@ -73,8 +73,8 @@ App web lokal, satu pengguna, untuk membuat aset 3D `.glb` dari prompt teks dan 
 | 8 | Viewer 3D | disetujui (tinjauan agent) | review |
 | 9 | Studio lengkap — **M1: app bisa dipakai** | disetujui (tinjauan agent) | review |
 | 10 | Gudang, detail aset, ekspor | disetujui (tinjauan agent) | review |
-| 11 | Pengaturan & state khusus | belum mulai | review |
-| 12 | Pengerasan & rilis lokal — **M2: rilis** | belum mulai | review |
+| 11 | Pengaturan & state khusus | disetujui | review |
+| 12 | Pengerasan & rilis lokal — **M2: rilis** | menunggu review | review |
 
 ## 4. Prinsip pengerjaan
 1. **Risiko terbesar dulu.** Runtime Blender (Tahap 1–2), kualitas loop Claude (3), dan tahap tekstur (4) dibuktikan
@@ -669,16 +669,16 @@ Keputusan dibuat bersama pemilik dan dicatat di Log.
 
 ### Tahap 11 — Pengaturan & state khusus
 **Tugas**
-- [ ] **Pengaturan:**
+- [x] **Pengaturan:**
   - akun (email, langganan dari `accountInfo()`);
   - model dari `supportedModels()`, effort, tier bawaan;
   - budget tier (berlaku untuk aset baru, divalidasi);
   - status runtime (Docker terjangkau, image ada, versi Blender, renderer OK);
   - tema.
-- [ ] **Endpoint kesehatan:**
+- [x] **Endpoint kesehatan:**
   - `/api/health/auth`: port ai-team, cache 10 menit;
   - `/api/health/runtime`.
-- [ ] **State khusus:**
+- [x] **State khusus:**
 
   | State | Isi |
   |---|---|
@@ -688,8 +688,8 @@ Keputusan dibuat bersama pemilik dan dicatat di Log.
   | Build gagal | Detail + coba lagi |
   | Terputus | Lanjutkan |
 
-- [ ] Notifikasi: toast dan Notification browser (dengan izin) saat proses di latar belakang selesai.
-- [ ] Ekspor Sumber memakai `tierSnapshot` aset begitu budget bisa diubah: README dan `scripts/runtime.ts probe`
+- [x] Notifikasi: toast dan Notification browser (dengan izin) saat proses di latar belakang selesai.
+- [x] Ekspor Sumber memakai `tierSnapshot` aset begitu budget bisa diubah: README dan `scripts/runtime.ts probe`
   menjalankan ulang skrip dengan budget aset itu, bukan `DEFAULT_TIERS` (← dari Tahap 10).
 
 **Tes wajib**
@@ -697,34 +697,38 @@ Keputusan dibuat bersama pemilik dan dicatat di Log.
 - axe.
 
 **Definition of Done**
-- [ ] Semua tes lolos
-- [ ] Laporan `docs/progress/tahap-11.md`
+- [x] Semua tes lolos
+- [x] Laporan `docs/progress/tahap-11.md`
 
 ### Tahap 12 — Pengerasan & rilis lokal (M2)
 **Tugas**
-- [ ] Error boundary per rute dan toast error global.
-- [ ] Performa:
-  - bundle (viewer di-lazy-load);
-  - memori server selama satu alur penuh;
-  - kebijakan restart Chromium renderer.
-- [ ] Backup dan retensi:
+- [x] Error boundary per rute dan toast error global.
+- [x] Performa:
+  - bundle (viewer di-lazy-load): `scripts/check-bundle.ts` berjalan setelah `bun run build`;
+  - memori server selama satu alur penuh: puncak RSS dicek di `e2e:api` (batas 400 MB);
+  - kebijakan restart Chromium renderer: daur ulang setelah `RENDER_RECYCLE_AFTER` render, tutup setelah menganggur
+    `RENDER_IDLE_CLOSE_MS`.
+- [x] Backup dan retensi (`server/services/maintenance.ts`, saat start lalu tiap jam):
   - `VACUUM INTO data/backups/app-YYYYMMDD.db` harian, simpan 7;
   - bersihkan `data/jobs/` dan cache `derived/` yang usang.
-- [ ] `bun run doctor`: versi Bun, Docker, image, ruang disk, login Claude, port, izin `data/`.
-- [ ] systemd user unit `deploy/ai-asset-generate.service`, berdasarkan unit ai-team:
+- [x] `bun run doctor`: versi Bun, Docker, image, ruang disk, login Claude, port, izin `data/`. Ditambah CLI `claude`
+  di PATH dan Chromium Playwright.
+- [x] systemd user unit `deploy/ai-asset-generate.service`, berdasarkan unit ai-team (dijaga
+  `tests/architecture/deploy.test.ts`):
   - `PATH` memuat `~/.bun/bin` dan `~/.local/bin`;
   - `WorkingDirectory` di root proyek;
   - `TimeoutStopSec`.
 
   Disertai cara memasang.
-- [ ] `README.md` berbahasa Indonesia: instalasi, menjalankan, update, backup/restore, pemecahan masalah.
-- [ ] Pastikan `/_smoke` hanya ada di mode tes.
+- [x] `README.md` berbahasa Indonesia: instalasi, menjalankan, update, backup/restore, pemecahan masalah.
+- [x] Pastikan `/_smoke` hanya ada di mode tes: tidak ada di build produksi (dijaga `scripts/check-bundle.ts`);
+  Vite dev tetap memuatnya untuk galeri `/_komponen` (AGENTS §8).
 
 **Definition of Done**
-- [ ] Semua suite + `RUNTIME_IT=1` lolos
-- [ ] 1 uji nyata sampai DONE (dengan izin)
-- [ ] Checklist rilis selesai
-- [ ] Laporan `docs/progress/tahap-12.md`
+- [x] Semua suite + `RUNTIME_IT=1` lolos
+- [x] 1 uji nyata sampai DONE (dengan izin)
+- [x] Checklist rilis selesai (di laporan)
+- [x] Laporan `docs/progress/tahap-12.md`
 
 ---
 
@@ -927,7 +931,8 @@ data/backups/                   salinan app.db harian
 
 | Endpoint | Untuk |
 |---|---|
-| `GET /api/health`, `/api/health/{auth,runtime}` | Status server, sesi Claude, runtime |
+| `GET /api/health`, `/api/health/{auth,runtime}?fresh=1` | Status server, sesi Claude, runtime (`fresh` melewati cache: "Periksa ulang") |
+| `POST /api/health/runtime/image` | Mulai membangun image runtime di latar (202 + status; selesai lewat event `runtime`) |
 | `GET/POST /api/assets` | Daftar (cari/filter/urut); buat aset baru (multipart) |
 | `GET/PATCH/DELETE /api/assets/:id` | Detail, ganti nama, hapus |
 | `GET /api/assets/:id/events?before&limit` | Snapshot thread (terbaru dulu per halaman, `hasMore`) |
@@ -940,7 +945,7 @@ data/backups/                   salinan app.db harian
 | `POST /api/assets/export-zip/prepare` | Periksa aset untuk ZIP dan siapkan file Unity lebih dulu; error berupa JSON, jawaban `{ assets, bytes }` |
 | `GET /api/assets/export-zip?ids&preset` | Unduh massal (ZIP streaming; semula `POST`, lihat Log keputusan) |
 | `GET/PUT /api/settings` | Pengaturan |
-| WebSocket `/api/ws` | Topik `global` dan `asset:<id>`; protokol ai-team |
+| WebSocket `/api/ws` | Topik `global` (aset, progres build, `settings`, `runtime`, `auth`) dan `asset:<id>`; protokol ai-team |
 
 ## Lampiran G — Batas sumber daya & keamanan
 **Mesin:** 16 core, RAM 14 GiB (±5 GB bebas), iGPU AMD (tanpa CUDA).
@@ -1224,3 +1229,29 @@ data/backups/                   salinan app.db harian
 | 2026-11-14 | Tahap 10 → **Tahap 11**: README Sumber dan `probe` menjalankan ulang skrip dengan `DEFAULT_TIERS[tier]`. Sampai Tahap 11 nilainya sama dengan `tierSnapshot` aset; begitu budget bisa diubah, Sumber harus membawa snapshot itu | Budget yang bisa diubah baru ada di Tahap 11 |
 | 2026-11-14 | Tahap 10 ditutup dan disetujui lewat tinjauan agent (delegasi pemilik). Lolos: `check`, E2E penuh (83), `e2e:api`, `RUNTIME_IT` (26), `test:assetkit` (77), `test:pipeline` (17), build tanpa warning, `tokens:sync --check`. 14 temuan tinjauan: 13 diperbaiki dengan tes, 1 dipindah ke Tahap 11. Uji import Unity menunggu pemilik (panduan di laporan). Laporan `docs/progress/tahap-10.md`. Tahap aktif → Tahap 11 (belum dimulai) | Delegasi pemilik 2026-11-14: "lanjut aja setiap tahap sampai selesai, anda review, anda jawab, anda revisi sendiri" |
 | 2026-11-14 | Pemilik: "sampai tahap 10 saja dulu". Delegasi berhenti di Tahap 10; Tahap 11 belum dimulai (tidak ada kode Tahap 11) dan baru dikerjakan bila pemilik memintanya | Permintaan pemilik |
+| 2026-11-18 | Tahap 11 dimulai atas permintaan pemilik ("lanjutkan"). Tanpa delegasi: tahap ditutup dengan status `menunggu review`, dan tampilan baru disusun di FigCraft untuk disetujui pemilik | Delegasi berakhir di Tahap 10 |
+| 2026-11-18 | Desain Tahap 11 disusun di FigCraft dari komponen dan token yang ada: layar "05 Pengaturan" dan frame "Tahap 11 · Pengaturan & state khusus" (banner akun dan runtime di bawah topbar, blok thread belum login, Pengaturan bermasalah, budget tidak valid). PNG di `design/exports/05-pengaturan*.png` dan `11-pengaturan-state-khusus*.png`. UI web menunggu persetujuan pemilik | AGENTS §2: tampilan baru disetujui pemilik dulu |
+| 2026-11-18 | Pemilik menjawab "lanjut" atas permintaan persetujuan desain Tahap 11 → desain disetujui, termasuk tiga rekomendasi: batas atas budget = Maksimal bawaan (50.000 segitiga, 3 material, 2048 px, 5 MB), tema tetap per browser, runtime belum siap = banner + toast `RUNTIME_NOT_READY` dari server (tombol kirim tidak dinonaktifkan) | Jawaban pemilik |
+| 2026-11-18 | Tahap 11: budget per tier di Pengaturan divalidasi oleh `TierBudgets` (`shared/limits.ts`, `TIER_BUDGET_LIMITS`) di server dan form; hanya aset baru yang memakai budget baru (`tierSnapshot`). Batas job bertekstur dihitung dari budget (atlas ≥2048 px atau segitiga > maks Sedang bawaan → 600 dtk), bukan dari nama tier | Budget bisa diubah, jadi nama tier tidak lagi menentukan berat job |
+| 2026-11-18 | Tahap 11: ZIP Sumber membawa `budget.json` (snapshot budget aset); README dan `scripts/runtime.ts probe --budget` menjalankan ulang skrip dengan snapshot itu. Versi cache ZIP Sumber naik ke 2 | Item Tahap 10 → 11: budget aset bisa berbeda dari `DEFAULT_TIERS` |
+| 2026-11-18 | Tahap 11: gerbang runtime di server — aksi yang mengirim pesan ke Claude ditolak `RUNTIME_NOT_READY` (409) bila Docker mati atau image belum ada; driver fixture selalu siap. `docker run --pull never`: image hanya dari `runtime:build` lokal. "Bangun image" dari app: `POST /api/health/runtime/image` (202), status `build` (`idle`/`building`/`failed`, `startedAt`, `endedAt`, ekor log ≤2000 byte) | Gerbang ditegakkan di server (AGENTS §3); image tidak boleh ditarik diam-diam dari registry. Snapshot flag sandbox diperbarui |
+| 2026-11-18 | Tahap 11: model dan effort dari Pengaturan berlaku untuk proses Claude berikutnya (proses yang sedang hidup tidak diganti). Model dicocokkan lewat `value` lalu `resolvedModel` (`findModel`), karena `supportedModels()` memberi alias (`opus`) sedangkan bawaan tersimpan sebagai id lengkap. Model tanpa effort (daftar kosong) menyembunyikan pilihan effort; nilai effort tetap dikirim ke SDK | Data `ModelInfo` SDK 0.3.323 (`sdk.d.ts`) |
+| 2026-11-18 | Tahap 11: event realtime `global` baru `settings`, `runtime`, `auth` (giliran gagal `AUTH_REQUIRED` meminta cek ulang akun) → `StatusWatcher` menginvalidasi query; tanpa polling | AGENTS §8 |
+| 2026-11-18 | Tahap 11: driver palsu — penanda `[keluar]` (belum login, `authentication_failed`); akun palsu `pemilik@contoh.invalid`, model `opus` | E2E state belum login tanpa kuota; tanpa data pemilik |
+| 2026-11-18 | Tahap 11: notifikasi browser (dengan izin, hanya saat tab tidak dilihat) untuk siap direview, selesai, gagal, dan butuh jawaban — juga untuk aset yang sedang dibuka; toast tetap hanya untuk aset lain. Klik membuka sesi aset | PLAN Tahap 11; aset yang dibuka di tab tersembunyi tetap perlu kabar |
+| 2026-11-18 | Tahap 11: kotak "Akhir log build" di Pengaturan menampilkan 5 baris terakhir yang tidak kosong. Banner akun/runtime di Studio, Gudang, Detail, dan sesi (tidak di Pengaturan) dalam satu live region yang selalu terpasang | Desain frame Tahap 11 A–B, D |
+| 2026-11-18 | Tahap 11: kartu dock "Giliran Claude gagal" (Coba lagi → `retry`) dan "Proses Claude terputus" (Lanjutkan → `resume`) untuk tahap yang masih dikerjakan, juga tanpa versi; bila versi sudah dikirim, kartu review tetap tampil. Disusun dari kartu dock yang ada dan digambar di frame Tahap 11 (bagian C2) setelah persetujuan desain | Checklist "Build gagal: coba lagi" dan "Terputus: Lanjutkan"; rute sudah ada sejak Tahap 6 tetapi belum punya tombol. **Perlu dilihat pemilik** |
+| 2026-11-18 | Tahap 11: tes batas `ANTHROPIC_API_KEY` mengecualikan `web/i18n/id.ts` (teks banner menyebut nama variabel) selama file itu tidak menyentuh env | Petunjuk perbaikan untuk pemilik; tes tetap menjaga kode |
+| 2026-11-18 | Permintaan pemilik: email dan jenis paket akun disembunyikan sementara di chip/menu akun dan Pengaturan. Akun yang login tampil "Akun Claude · Login lewat Claude Code"; status Terhubung tetap. Satu konstanta `SHOW_ACCOUNT_IDENTITY = false` di `web/lib/health.ts` (bukan kode yang dikomentari, AGENTS §4). FigCraft tetap menampilkan email: selisih sementara yang disengaja | "account name sama type accountnya sementara di hide saja dulu / comment" |
+| 2026-11-18 | Pemilik menjawab "lanjut" atas laporan Tahap 11 (pertanyaan: kartu Coba lagi/Lanjutkan, dan lanjut ke Tahap 12) → Tahap 11 disetujui, termasuk kartu dock C2. Tahap aktif → **Tahap 12** (berjalan) | Jawaban pemilik |
+| 2026-11-18 | Tahap 12: error boundary dua lapis. Error halaman tampil di area utama (`PageErrorPage`, rel tetap bisa dipakai, pindah halaman memulihkan); error kerangka app memakai `RouteErrorPage` layar penuh. Error tak tertangani dan promise ditolak tanpa `catch` → satu toast global (id tetap, `AbortError` diabaikan). Tampilan disusun dari EmptyState + Button seperti halaman 404 | Checklist "Error boundary per rute dan toast error global" |
+| 2026-11-18 | Tahap 12: `scripts/check-bundle.ts` berjalan otomatis setelah `bun run build`. Gagal bila kode halaman uji/test hook ikut ke build produksi, three.js masuk chunk awal, atau chunk awal > 300 kB gzip (sekarang ±231 kB) | Performa bundle + "`/_smoke` hanya di mode tes" dijaga otomatis |
+| 2026-11-18 | Tahap 12: `e2e:api` membaca puncak RSS server (`VmHWM`) di akhir alur penuh mode palsu; batas 400 MB (terukur 220–232 MB). Chromium renderer proses terpisah, tidak dihitung | Checklist "memori server selama satu alur penuh" |
+| 2026-11-18 | Tahap 12: kebijakan restart Chromium renderer: browser diluncurkan ulang setelah 200 render (`RENDER_RECYCLE_AFTER`) dan ditutup setelah menganggur 10 menit (`RENDER_IDLE_CLOSE_MS`); timer `unref`, render baru membatalkan penutupan | Membatasi memori proses yang hidup lama; ±200 MB RAM kembali saat app tidak dipakai |
+| 2026-11-18 | Tahap 12: pemeliharaan data (`server/services/maintenance.ts`) saat start lalu tiap jam: backup `VACUUM INTO` harian (tanggal lokal, tulis atomik, simpan 7); folder `data/jobs/job-*` > 24 jam; di `derived/`: cache ekspor Unity/Sumber tak diubah 30 hari, ZIP Sumber bernama lama, `.tmp` > 1 jam, folder untuk versi yang tidak ada. Thumbnail, versi, aset tidak disentuh. `VACUUM INTO` lewat `DatabaseHandle.backupInto` (bun:sqlite hanya di `server/db`, tes arsitektur). `stop()` menunggu putaran berjalan sebelum database ditutup | Checklist backup & retensi |
+| 2026-11-18 | Tahap 12: `bun run doctor` ditambah pemeriksaan CLI `claude` di PATH dan Chromium Playwright. Tidak memeriksa variabel `ANTHROPIC_*` di env (tes batas melarang kode membacanya; `agentEnv()` sudah membuangnya, dan SDK melaporkan sumber API key lain). Email/paket tidak dicetak | Konsisten dengan penyembunyian identitas akun |
+| 2026-11-18 | Tahap 12: unit `deploy/ai-asset-generate.service` dari unit ai-team; `TimeoutStopSec=30`, tanpa `After=docker.service` (unit user tidak bisa menunggu layanan sistem; Docker yang belum siap tampil sebagai banner runtime). Dijaga `tests/architecture/deploy.test.ts`; tidak dipasang ke `~/.config/systemd` (di luar repo, keputusan pemilik) | Checklist systemd |
+| 2026-11-18 | Tahap 12: `/_smoke`, `/_komponen`, `/_viewer` tetap ada di Vite dev (AGENTS §8: galeri untuk mode dev/tes) dan build mode test; build produksi tanpa halaman uji, dijaga `check-bundle` | Tafsir "hanya di mode tes" = tidak pernah di produksi |
+| 2026-11-18 | Tahap 12: uji nyata (izin pemilik) lewat API dev server pemilik (`sdk` × `docker`, `data/` asli): "Peti kayu dengan engsel besi", Sedang → DONE dalam 262 dtk, 2 build bentuk dasar + 2 bertekstur, v4 6.576 segitiga, `web.glb` 447 KB, validator 0 error; ekspor Unity tanpa ekstensi kompresi, 0 error. Menutup uji nyata Tahap 9 yang tertunda | DoD Tahap 12 |
+| 2026-11-18 | Permintaan pemilik (di luar tahap aktif, Tahap 12 menunggu review): dokumentasi lengkap untuk pemakai + developer di `docs/` — indeks `docs/README.md`, `docs/fitur/` (8 halaman), `docs/teknis/` (9 halaman); gambar menautkan bukti `docs/progress/tahap-12/`. Tes `tests/architecture/docs.test.ts` menjaga tautan; AGENTS §10 mewajibkan memperbarui halaman terkait | "saya butuh doc lengkap untuk project ini, seperti fitur apa saja dll" |
+| 2026-11-18 | Saat menulis dokumentasi: AGENTS §9 dikoreksi (viewer memakai `RoomEnvironment` lokal, bukan HDRI) dan §13 (`save_blend` membuang semua teks, bukan hanya `use_module`). Selisih yang dicatat tanpa diubah: Lampiran G menyebut job hanya mulai bila RAM cukup, padahal `HeavyLane` hanya antrean FIFO satu job; teks Pengaturan notifikasi tidak menyebut "selesai" walau kode mengirimnya | Dokumen mengikuti kode |

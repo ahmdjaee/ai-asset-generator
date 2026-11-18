@@ -202,7 +202,7 @@ Bila pemilik hanya bilang "lanjutkan", kerjakan tugas berikutnya yang belum dice
   - jangan `setState` di `useFrame`; pakai ref.
 - **Dispose** geometry, material, dan texture saat unmount atau saat ganti aset.
 - **Tanpa aset dari CDN:**
-  - HDRI lokal, tanpa preset `Environment`;
+  - cahaya lingkungan lokal (`RoomEnvironment` three), tanpa HDRI atau preset `Environment` dari CDN;
   - `useGLTF(url, false, true)`: Draco mati, meshopt aktif.
 - Viewer di-lazy-load sebagai chunk terpisah.
 - `window.__viewer` hanya ada di mode tes.
@@ -222,6 +222,7 @@ Bila pemilik hanya bilang "lanjutkan", kerjakan tugas berikutnya yang belum dice
 - **Selesai berarti:**
   - `bun run check` hijau;
   - DoD tahap terpenuhi;
+  - halaman `docs/fitur/` atau `docs/teknis/` yang terkait ikut diperbarui bila fitur, API, skema, atau batas berubah;
   - tidak ada error atau warning baru di console browser maupun log server.
 
   Bila sesuatu tidak bisa diverifikasi, tulis begitu di laporan.
@@ -247,7 +248,7 @@ Repo baru di-`git init` di Tahap 0. Aturan berikut disalin apa adanya dari AGENT
 | `bun run check` | lint + typecheck + test + cakupan. Wajib hijau sebelum mencentang tugas | 0 |
 | `bun run lint` / `format` / `typecheck` | Biome; `tsc --noEmit` untuk server dan web | 0 |
 | `bun run test` | `test:server` + `test:web` | 0 |
-| `bun run build` / `start` | Build web, lalu jalankan server produksi | 0 |
+| `bun run build` / `start` | Build web (lalu `scripts/check-bundle.ts`: tanpa kode khusus tes, viewer di chunk terpisah, chunk awal ≤300 kB gzip), lalu jalankan server produksi | 0 |
 | `bun run build:test` | Build mode test ke `dist-test/` (berisi `/_smoke`); dipakai server E2E di `127.0.0.1:4342` | 0 |
 | `bun run e2e:smoke` / `e2e` | Playwright + axe. Dengan `SCREENSHOT_DIR=docs/progress/tahap-NN`, screenshot bukti (shell, galeri `/_komponen`) disimpan ke folder itu | 0 |
 | `bun run check:auth` | Cek login Claude lewat `accountInfo()`, tanpa memanggil model | 0 |
@@ -259,13 +260,13 @@ Repo baru di-`git init` di Tahap 0. Aturan berikut disalin apa adanya dari AGENT
 | `RUNTIME_IT=1 bun test tests/integration/runtime` | Tes runtime nyata dengan Docker, termasuk alur penuh `AGENT_DRIVER=fake` × `RUNTIME_DRIVER=docker` (tanpa kuota) | 1 |
 | `bun run test:coverage` | Cakupan baris ≥90% per file di `server/domain` dan `server/agent` (ambang di `bunfig.toml`) | 5 |
 | `bun scripts/fixture-sheets.ts` | Render ulang contact sheet fixture (`tests/fixtures/contact-sheets/`) untuk `RUNTIME_DRIVER=fixture` | 5 |
-| `AGENT_DRIVER=fake RUNTIME_DRIVER=fixture bun run dev` | App tanpa Claude dan tanpa Docker (skenario palsu; penanda `[tanya]`, `[tanya-banyak]`, `[macet]`, `[batas]`, `[mati]` di pesan) | 5 |
+| `AGENT_DRIVER=fake RUNTIME_DRIVER=fixture bun run dev` | App tanpa Claude dan tanpa Docker (skenario palsu; penanda `[tanya]`, `[tanya-banyak]`, `[macet]`, `[batas]`, `[mati]`, `[keluar]` di pesan) | 5 |
 | `bun run test:pipeline` / `pipeline:demo` | Tes renderer + golden (butuh Chromium); demo skrip → versi v1 di `.tmp/pipeline-demo/` | 2 |
 | `UPDATE_GOLDENS=1 bunx playwright test tests/e2e/viewer.e2e.ts` | Buat ulang golden viewer (`tests/goldens/viewer/`, 7 sudut × 2 tema); tanpa env itu golden hanya dibandingkan | 8 |
 | `bun run eval:base` / `eval:texture` | Evaluasi kualitas dengan Claude sungguhan. **Butuh izin** | 3 / 4 |
 | `bun run textures:sync` | Unduh pustaka material CC0 (butuh jaringan) | 4 |
 | `bun run e2e:api` | Alur penuh lewat HTTP + WebSocket terhadap proses server di port 4342, mode palsu; log server wajib bersih | 6 |
-| `bun run doctor` | Cek kesiapan mesin | 12 |
+| `bun run doctor` | Cek kesiapan mesin (Bun, `claude` + login, Docker + image, Chromium, disk, port, `data/`); tanpa kuota | 12 |
 
 - Perintah dari tahap yang belum dikerjakan memang belum ada; perintah itu dibuat di tahap yang tercantum.
 - Port app ini 4340/4341/4342 (`shared/ports.ts`). Port lain di mesin ini: ai-team 4320/4321, learning-system dan
@@ -281,6 +282,10 @@ Repo baru di-`git init` di Tahap 0. Aturan berikut disalin apa adanya dari AGENT
 - `bpy==5.2.4` hanya tersedia untuk CPython 3.13 (manylinux x86_64). Python host (3.14) tidak bisa dipakai.
 
 **Server dan tes**
+- Optional call `f?.(await g())` tidak mengevaluasi argumennya bila `f` tidak ada, jadi `g()` tidak pernah dipanggil.
+  Hitung hasilnya dulu ke variabel (kasus nyata: `onDone` opsional di `server/services/maintenance.ts`).
+- Server menjalankan pemeliharaan saat start (backup `data/backups/`, bersih-bersih `data/jobs/` dan `derived/`). Server
+  tes dengan `DATA_DIR` sementara ikut membuat backup di sana; itu wajar.
 - Bun `idleTimeout` bawaan 10 dtk memutus respons yang lambat.
 - Preload happy-dom mengganti global seperti `fetch`, jadi hanya dipakai untuk tes web. Menjalankan satu file tes web
   juga butuh preload itu: `bun test --preload ./tests/setup/happy-dom.ts web/<file>`.
@@ -415,8 +420,9 @@ Repo baru di-`git init` di Tahap 0. Aturan berikut disalin apa adanya dari AGENT
 - Bentuk dasar diekspor tanpa UV (`export_texcoords` mengikuti material), jadi mode UV viewer nonaktif di review
   bentuk dasar.
 - `.blend` bisa membawa kode yang berjalan saat dibuka di Blender desktop: teks `use_module` dan driver `SCRIPTED`
-  (juga di node tree material). Driver biasa (AVERAGE dan sejenisnya) tidak menjalankan Python. `save_blend` membuang
-  keduanya sebelum menyimpan.
+  (juga di node tree material). Driver biasa (AVERAGE dan sejenisnya) tidak menjalankan Python. `save_blend`
+  (`_strip_python` di `runtime/assetkit/assetkit/io.py`) membuang **semua** datablock teks dan semua driver `SCRIPTED`
+  sebelum menyimpan.
 
 **Web**
 - Token memakai `@theme static`, bukan `@theme inline`: `inline` menanam nilai tema gelap ke kelas utilitas, sehingga
@@ -499,6 +505,12 @@ Repo baru di-`git init` di Tahap 0. Aturan berikut disalin apa adanya dari AGENT
   (detail aset yang dihapus ditandai lewat `markAssetDeleted`).
 - Screenshot Playwright berukuran piksel perangkat: dengan `deviceScaleFactor: 2` (mis. `shell.e2e.ts`), klip 1 piksel CSS
   menjadi gambar 2×2. Helper yang membaca piksel menghitung skala dari lebar gambar (`viewportPixels`).
+- Chromium headless: `context.grantPermissions(["notifications"])` hanya mengubah Permissions API;
+  `Notification.permission` tetap `"denied"`. E2E yang butuh izin notifikasi menimpa getter `Notification.permission`
+  lewat `addInitScript`.
+- Status kesehatan di E2E: akun palsu selalu login dan runtime fixture selalu siap. Banner akun/runtime diuji dengan
+  `page.route("**/api/health/…")`; jawaban 200 (bukan 4xx) supaya console bersih.
+- Info tier di composer memakai angka ringkas (`9k segitiga`), bukan `9.000`.
 - Skia menghaluskan tepi dalam outline yang membulat (±97% warna cincin) walau posisinya bulat. Cek piksel cincin fokus
   membaca kedua piksel pita 2 px dan cukup satu yang sama persis (`focusRingProblem`).
 

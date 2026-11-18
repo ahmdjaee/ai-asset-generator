@@ -192,3 +192,5 @@ Tahap 10 — Gudang, detail aset, ekspor:
 - cari, filter, urut; putar thumbnail saat hover; pilih banyak + ZIP streaming;
 - halaman detail aset dan dialog ekspor Web / Unity / Sumber;
 - dari Tahap 9: thumbnail versi dari render turntable, dan menu "…" di topbar sesi.
+
+> **Catatan 2026-11-18:** uji nyata yang tertunda sudah dijalankan di Tahap 12 (aset sampai DONE). Lihat `docs/progress/tahap-12.md`.

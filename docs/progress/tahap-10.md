@@ -229,3 +229,5 @@ Tahap 11 — Pengaturan & state khusus:
 - state belum login, batas pemakaian + waktu reset, runtime belum siap, build gagal + coba lagi; notifikasi;
 - info tier di composer memakai budget dari Pengaturan (pindahan dari Tahap 9);
 - ekspor Sumber memakai `tierSnapshot` aset (pindahan dari Tahap 10).
+
+> **Catatan 2026-11-18:** uji nyata yang tertunda sudah dijalankan di Tahap 12 (aset sampai DONE). Lihat `docs/progress/tahap-12.md`.
