@@ -8,7 +8,7 @@
  *   (`<nama>-base.glb`);
  * - `blend-fixtures`: `.blend` untuk pasangan fixture `RUNTIME_DRIVER=fixture` (preset ekspor Sumber) →
  *   `tests/fixtures/glb/textured/<nama>{-base,}.blend`; GLB fixture tidak ditimpa;
- * - `probe <skrip.py> [--out DIR] [--base | --textured TIER [--base-script base.py]]`: jalankan satu skrip mentah,
+ * - `probe <skrip.py> [--out DIR] [--base | --textured TIER [--budget budget.json] [--base-script base.py]]`: jalankan satu skrip mentah,
  *   lewat harness bentuk dasar (`--base`), atau alur bertekstur penuh per tier (mis. `runtime/probes/*`) dengan batas
  *   job bertekstur dan pustaka material. `--base-script` disalin ke job sebagai `base.py` (untuk `scene.run_base()`,
  *   mis. skrip dari ZIP ekspor Sumber). Isi `/job/out` disalin ke DIR (bawaan `.tmp/probe-out`).
@@ -17,6 +17,7 @@ import { cp, mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { textureCompress } from "@gltf-transform/functions";
 import sharp from "sharp";
+import { z } from "zod";
 import { loadConfig } from "../server/config.ts";
 import { readGlb, writeGlb } from "../server/pipeline/io.ts";
 import { buildImage, imageExists, type JobResult, runJob } from "../server/runtime/docker.ts";
@@ -38,6 +39,8 @@ import {
   TEXTURED_MAX_JOB_LIMITS,
   TEXTURED_OUTPUT_MAX_BYTES,
   TIER_IDS,
+  type TierBudget,
+  TierBudgetSchema,
   type TierId,
   texturedJobLimits,
 } from "../shared/limits.ts";
@@ -150,7 +153,7 @@ async function texturedSamples(): Promise<void> {
         jobId: jobId(`textured-${name}`),
         image,
         mounts: { jobDir: dir.path, assetkitDir: ASSETKIT_DIR, materialsDir },
-        limits: texturedJobLimits("sedang"),
+        limits: texturedJobLimits(DEFAULT_TIERS.sedang),
         owner: SCRIPT_OWNER,
         command: texturedJobCommand(bakeSizes(DEFAULT_TIERS.sedang)),
       });
@@ -270,7 +273,7 @@ async function blendFixtures(): Promise<void> {
         script: join(RUNTIME_DIR, "samples", "textured", `${name}.py`),
         extras: { "base.py": baseScript },
         materialsDir,
-        limits: texturedJobLimits("ringan"),
+        limits: texturedJobLimits(DEFAULT_TIERS.ringan),
         command: texturedJobCommand(bakeSizes(DEFAULT_TIERS.ringan)),
         outputs: TEXTURED_OUTPUT_MAX_BYTES,
       },
@@ -279,17 +282,29 @@ async function blendFixtures(): Promise<void> {
   }
 }
 
+/** `budget.json` dari ZIP Sumber: snapshot budget aset (bisa berbeda dari `DEFAULT_TIERS` bila diubah di Pengaturan). */
+const BudgetFile = z.object({ tierId: z.enum(TIER_IDS), budget: TierBudgetSchema });
+
+async function readBudget(path: string | undefined, tierId: TierId): Promise<TierBudget> {
+  if (path === undefined) return DEFAULT_TIERS[tierId];
+  const file = BudgetFile.parse(JSON.parse(await readFile(path, "utf8")));
+  if (file.tierId !== tierId) throw new Error(`budget.json untuk tier ${file.tierId}, bukan ${tierId}`);
+  return file.budget;
+}
+
 async function probe(
   script: string | undefined,
   outDir: string,
   tierId: TierId | undefined,
   base: boolean,
   baseScript: string | undefined,
+  budgetPath: string | undefined,
 ): Promise<void> {
   if (script === undefined) {
     console.error("Pemakaian: bun scripts/runtime.ts probe <skrip.py> [--out DIR]");
     process.exit(2);
   }
+  const budget = tierId === undefined ? undefined : await readBudget(budgetPath, tierId);
   const image = await requireRuntimeImage();
   const materialsDir = join(loadConfig().dataDir, "library", "materials");
   await mkdir(materialsDir, { recursive: true });
@@ -306,8 +321,8 @@ async function probe(
       limits: TEXTURED_MAX_JOB_LIMITS,
       owner: SCRIPT_OWNER,
       command:
-        tierId !== undefined
-          ? texturedJobCommand(bakeSizes(DEFAULT_TIERS[tierId]))
+        budget !== undefined
+          ? texturedJobCommand(bakeSizes(budget))
           : base
             ? [...BASE_JOB_COMMAND]
             : ["python", "/job/script.py"],
@@ -364,6 +379,7 @@ switch (command) {
       tierFlag(rest),
       rest.includes("--base"),
       flag(rest, "--base-script"),
+      flag(rest, "--budget"),
     );
     break;
   default:

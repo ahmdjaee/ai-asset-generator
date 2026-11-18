@@ -1,0 +1,35 @@
+# systemd user unit AI Asset Generate (PLAN Tahap 12), berdasarkan deploy/ai-team.service.
+# Cara memasang ada di README.md, bagian "Menjalankan otomatis (systemd)".
+[Unit]
+Description=AI Asset Generate di http://127.0.0.1:4340
+# Docker adalah layanan sistem; unit user tidak bisa menunggunya. Bila Docker belum siap, status runtime di app
+# menampilkan banner dan job baru ditolak sampai Docker siap.
+After=network-online.target
+
+[Service]
+Type=simple
+
+# WAJIB: Bun membaca .env dari folder kerja, dan DATA_DIR bawaan (./data) relatif terhadapnya.
+# Ganti path ini bila repo dipindah.
+WorkingDirectory=/var/www/ai-asset-generate
+
+# WAJIB: Agent SDK memanggil `claude` dari PATH (~/.local/bin), dan server berjalan di Bun (~/.bun/bin).
+# Tanpa ~/.local/bin server tampak sehat, tetapi setiap giliran Claude gagal.
+Environment=PATH=%h/.bun/bin:%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+# Mode production: server menyajikan dist/ (hasil `bun run build`, dibuat saat instalasi dan update).
+Environment=NODE_ENV=production
+
+ExecStart=%h/.bun/bin/bun server/main.ts
+
+Restart=on-failure
+RestartSec=5
+# Ruang untuk shutdown() di server/main.ts: hentikan pemeliharaan, tutup WebSocket, sesi Claude, job Docker
+# (`docker kill`), lalu Chromium. KillMode bawaan (control-group) membereskan proses claude dan Chromium yang tersisa.
+TimeoutStopSec=30
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ai-asset-generate
+
+[Install]
+WantedBy=default.target
