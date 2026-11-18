@@ -25,6 +25,11 @@ import { TestSocket } from "../support/ws.ts";
 const ROOT = join(import.meta.dir, "../..");
 const BASE = `http://127.0.0.1:${E2E_PORT}`;
 const FLOW_TIMEOUT = 60_000;
+/**
+ * Batas puncak memori proses server (RSS) selama satu alur penuh mode palsu (Tahap 12). Terukur 220 MB (2026-11-18); batas
+ * memberi ruang tanpa membiarkan kebocoran besar lolos. Chromium renderer adalah proses terpisah (tidak dihitung).
+ */
+const SERVER_PEAK_RSS_BUDGET_KB = 400 * 1024;
 
 const LogLine = z.object({ level: z.number(), msg: z.string() }).loose();
 
@@ -112,8 +117,22 @@ beforeAll(async () => {
   await logs.started;
 }, 30_000);
 
+/** Puncak RSS proses (`VmHWM`, kB) dari `/proc`; null bila tidak tersedia (bukan Linux). */
+async function peakRssKb(pid: number): Promise<number | null> {
+  const status = await Bun.file(`/proc/${pid}/status`)
+    .text()
+    .catch(() => "");
+  const match = /^VmHWM:\s+(\d+) kB$/m.exec(status);
+  return match?.[1] === undefined ? null : Number(match[1]);
+}
+
 afterAll(async () => {
   if (server !== undefined) {
+    const peak = await peakRssKb(server.pid);
+    if (peak !== null) {
+      console.log(`puncak RSS server selama alur: ${Math.round(peak / 1024)} MB`);
+      expect(peak).toBeLessThan(SERVER_PEAK_RSS_BUDGET_KB);
+    }
     server.kill("SIGTERM");
     expect(await server.exited).toBe(0);
     await logsDone;

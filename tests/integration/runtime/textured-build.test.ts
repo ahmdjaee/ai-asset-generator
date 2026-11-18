@@ -119,7 +119,7 @@ describe.skipIf(!ENABLED)("buildTexturedVersion", () => {
       expect(json.extensionsUsed).toContain("EXT_meshopt_compression");
       expect(new Set((json.images ?? []).map((img) => img.mimeType))).toEqual(new Set(["image/webp"]));
 
-      expect(outcome.timings.runtimeMs).toBeLessThanOrEqual(texturedJobLimits(tierId).timeoutMs);
+      expect(outcome.timings.runtimeMs).toBeLessThanOrEqual(texturedJobLimits(tier).timeoutMs);
       if (outcome.peakMemBytes !== null) expect(outcome.peakMemBytes).toBeLessThan(2.5 * 1024 * MIB);
       console.log(
         `[${tierId}] runtime ${(outcome.timings.runtimeMs / 1000).toFixed(1)} dtk, RAM puncak ` +

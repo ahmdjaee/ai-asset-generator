@@ -4,6 +4,7 @@ import {
   collectConsoleProblems,
   collectExternalRequests,
   nonBackgroundRatio,
+  saveScreenshot,
   seriousA11yViolations,
 } from "./helpers.ts";
 
@@ -114,6 +115,30 @@ test.describe("tema dan rute", { tag: "@smoke" }, () => {
     await page.getByRole("link", { name: "Kembali ke Studio" }).click();
     await expect(page.getByRole("heading", { level: 1, name: "Mau buat aset 3D apa?" })).toBeVisible();
     expect(problems).toEqual([]);
+  });
+
+  test("chunk halaman gagal diunduh: halaman error di area utama, rel tetap bisa dipakai", async ({
+    page,
+  }) => {
+    const problems = collectConsoleProblems(page);
+    await page.route("**/assets/StudioSessionPage-*.js", (route) => route.abort("failed"));
+    await page.goto("/");
+    await page.goto("/studio/tidak-ada");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Halaman ini gagal ditampilkan" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Muat ulang" })).toBeVisible();
+    expect(await seriousA11yViolations(page)).toEqual([]);
+    await saveScreenshot(page, "halaman-error.png");
+    await page
+      .getByRole("navigation", { name: "Navigasi utama" })
+      .getByRole("link", { name: "Gudang" })
+      .click();
+    await expect(page.getByRole("heading", { level: 1, name: "Gudang" })).toBeVisible();
+    // Yang tercatat hanya kegagalan yang disengaja: unduhan chunk dan log halaman error.
+    expect(
+      problems.filter((problem) => !/StudioSessionPage|Halaman gagal ditampilkan/.test(problem)),
+    ).toEqual([]);
   });
 
   test("API yang tidak ada menjawab 404 berformat { code, message }", async ({ request }) => {

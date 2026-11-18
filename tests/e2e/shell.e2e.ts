@@ -30,6 +30,12 @@ async function expectBox(locator: Locator, expected: Partial<Box>) {
   }
 }
 
+/**
+ * Email akun driver palsu (`SCENARIO_EMAIL` di `server/agent/scenario-port.ts`). Tidak di-import: Playwright berjalan di
+ * Node, sedangkan modul server memakai API Bun (`import.meta.dir`).
+ */
+const SCENARIO_EMAIL = "pemilik@contoh.invalid";
+
 const rail = (page: Page) => page.getByRole("navigation", { name: "Navigasi utama" });
 
 test.describe("kerangka app sesuai FigCraft", { tag: "@smoke" }, () => {
@@ -218,7 +224,11 @@ for (const theme of ["dark", "light"] as const) {
       await page.goto("/");
       await rail(page).getByRole("button", { name: "Akun" }).click();
       const menu = page.getByRole("menu");
+      // Data akun dari `/api/health/auth` (Tahap 11). Email dan jenis paket disembunyikan sementara (permintaan pemilik).
+      await expect(menu.getByText("Login lewat Claude Code")).toBeVisible();
       await expect(menu.getByText("Akun Claude")).toBeVisible();
+      await expect(menu.getByText(SCENARIO_EMAIL)).toHaveCount(0);
+      await expect(menu.getByText(/Paket Max/)).toHaveCount(0);
       expect(await seriousA11yViolations(page)).toEqual([]);
       await saveScreenshot(page, `menu-akun-${label}.png`);
       await page.keyboard.press("Escape");

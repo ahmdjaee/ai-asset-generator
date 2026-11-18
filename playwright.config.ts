@@ -9,7 +9,7 @@ const viewport = { width: 1440, height: 900 };
  * direview" dan kartu "Terakhir dibuat" di halaman tes lain (mis. toast menutupi gizmo viewer). Tes ini berjalan di
  * project sendiri, satu per satu, setelah semua tes lain selesai.
  */
-const ASSET_TESTS = /(gudang|studio)\.e2e\.ts$/;
+const ASSET_TESTS = /(gudang|states|studio)\.e2e\.ts$/;
 
 const chromium = {
   ...devices["Desktop Chrome"],

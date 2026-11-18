@@ -249,6 +249,36 @@ describe("pemulihan renderer", () => {
     expect((await renderer.render(await fixture("peti"), { views: ["top"] })).tiles).toHaveLength(1);
   });
 
+  test("kebijakan restart: browser diluncurkan ulang setelah N render dan ditutup saat menganggur", async () => {
+    const pending: Array<() => void> = [];
+    const recycling = new Renderer({
+      recycleAfter: 2,
+      idleCloseMs: 60_000,
+      schedule: (run) => {
+        pending.push(run);
+        return () => pending.splice(pending.indexOf(run), 1);
+      },
+    });
+    try {
+      const glb = await fixture("peti");
+      await recycling.render(glb, { views: ["front"] });
+      await recycling.render(glb, { views: ["front"] });
+      expect(recycling.launches).toBe(1);
+      // Render ketiga melewati batas daur ulang: browser baru.
+      await recycling.render(glb, { views: ["front"] });
+      expect(recycling.launches).toBe(2);
+      // Hanya satu penutupan saat menganggur yang tertunda (render baru membatalkan yang lama).
+      expect(pending).toHaveLength(1);
+      await pending.shift()?.();
+      expect(recycling.running).toBe(false);
+      expect((await recycling.render(glb, { views: ["front"] })).tiles).toHaveLength(1);
+      expect(recycling.launches).toBe(3);
+    } finally {
+      await recycling.close();
+    }
+    expect(pending).toHaveLength(0);
+  }, 60_000);
+
   test("GLB terlalu besar ditolak sebelum dikirim ke browser", async () => {
     await expect(renderer.render(new Uint8Array(RENDER_MAX_GLB_BYTES + 1))).rejects.toMatchObject({
       code: "MODEL_TOO_LARGE",
