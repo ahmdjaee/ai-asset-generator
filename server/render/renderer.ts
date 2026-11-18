@@ -5,13 +5,17 @@
  * - Halaman tidak punya akses jaringan: semua request dilayani `page.route` dari memori (tanpa port terbuka),
  *   request lain diblokir.
  * - Browser atau halaman yang crash dibuat ulang otomatis; satu render dicoba ulang sekali setelah crash.
+ * - Kebijakan restart: browser diluncurkan ulang setelah `RENDER_RECYCLE_AFTER` render dan ditutup setelah menganggur
+ *   `RENDER_IDLE_CLOSE_MS`; render berikutnya meluncurkannya lagi.
  */
 import { randomBytes } from "node:crypto";
 import { join } from "node:path";
 import { type Browser, chromium, type Page, type Route } from "playwright";
 import { z } from "zod";
 import {
+  RENDER_IDLE_CLOSE_MS,
   RENDER_MAX_GLB_BYTES,
+  RENDER_RECYCLE_AFTER,
   RENDER_TILE_PX,
   RENDER_TIMEOUT_MS,
   TURNTABLE_FRAME_PX,
@@ -110,6 +114,22 @@ function checkSize(glb: Uint8Array): void {
   }
 }
 
+/** Menjadwalkan `run` setelah `ms`; hasilnya pembatal. Disuntikkan di tes supaya tanpa menunggu waktu nyata. */
+export type Schedule = (run: () => Promise<void>, ms: number) => () => void;
+
+const realSchedule: Schedule = (run, ms) => {
+  const timer = setTimeout(() => void run().catch(() => undefined), ms);
+  // Timer menganggur tidak boleh menahan proses tetap hidup (skrip CLI, tes).
+  timer.unref();
+  return () => clearTimeout(timer);
+};
+
+export type RendererOptions = Readonly<{
+  recycleAfter?: number;
+  idleCloseMs?: number;
+  schedule?: Schedule;
+}>;
+
 export class Renderer {
   private browser: Browser | null = null;
   private page: Page | null = null;
@@ -118,6 +138,22 @@ export class Renderer {
   private readonly lock = new Semaphore(1);
   /** Berapa kali browser diluncurkan (untuk tes dan log). */
   launches = 0;
+  private rendersSinceLaunch = 0;
+  private cancelIdle: (() => void) | null = null;
+  private readonly recycleAfter: number;
+  private readonly idleCloseMs: number;
+  private readonly schedule: Schedule;
+
+  constructor(options: RendererOptions = {}) {
+    this.recycleAfter = options.recycleAfter ?? RENDER_RECYCLE_AFTER;
+    this.idleCloseMs = options.idleCloseMs ?? RENDER_IDLE_CLOSE_MS;
+    this.schedule = options.schedule ?? realSchedule;
+  }
+
+  /** Browser sedang hidup (untuk tes dan log). */
+  get running(): boolean {
+    return this.browser?.isConnected() === true;
+  }
 
   /** String renderer WebGL, mis. "ANGLE (Google, Vulkan … (SwiftShader …))". */
   async rendererInfo(): Promise<string> {
@@ -146,6 +182,12 @@ export class Renderer {
   }
 
   async close(): Promise<void> {
+    this.cancelIdle?.();
+    this.cancelIdle = null;
+    await this.closeBrowser();
+  }
+
+  private async closeBrowser(): Promise<void> {
     const browser = this.browser;
     this.browser = null;
     this.page = null;
@@ -159,8 +201,11 @@ export class Renderer {
 
   /** Satu render pada satu waktu; browser atau halaman yang mati di tengah jalan diluncurkan ulang, dicoba sekali lagi. */
   private async exclusive<T>(run: () => Promise<T>): Promise<T> {
+    this.cancelIdle?.();
+    this.cancelIdle = null;
     const release = await this.lock.acquire();
     try {
+      if (this.rendersSinceLaunch >= this.recycleAfter) await this.closeBrowser();
       try {
         return await run();
       } catch (error) {
@@ -168,8 +213,24 @@ export class Renderer {
         return await run();
       }
     } finally {
+      this.rendersSinceLaunch += 1;
       release();
+      this.scheduleIdleClose();
     }
+  }
+
+  /** Menutup browser setelah menganggur; render yang datang lebih dulu membatalkannya. */
+  private scheduleIdleClose(): void {
+    this.cancelIdle?.();
+    this.cancelIdle = this.schedule(async () => {
+      this.cancelIdle = null;
+      const release = await this.lock.acquire();
+      try {
+        await this.closeBrowser();
+      } finally {
+        release();
+      }
+    }, this.idleCloseMs);
   }
 
   private async renderOnce(glb: Uint8Array, options: RenderOptions): Promise<RenderOutput> {
@@ -297,6 +358,7 @@ export class Renderer {
     if (this.browser?.isConnected()) return this.browser;
     const browser = await chromium.launch({ args: CHROMIUM_ARGS });
     this.launches += 1;
+    this.rendersSinceLaunch = 0;
     browser.on("disconnected", () => {
       if (this.browser === browser) {
         this.browser = null;

@@ -9,6 +9,7 @@ import { loadConfig } from "./config.ts";
 import { openDatabase } from "./db/client.ts";
 import { createLogger } from "./log.ts";
 import { ownerForDataDir, removeOrphanJobs } from "./runtime/docker.ts";
+import { Maintenance } from "./services/maintenance.ts";
 
 const config = loadConfig();
 const log = createLogger(config.logLevel);
@@ -62,12 +63,28 @@ if (config.runtimeDriver === "docker") {
     .catch((error: unknown) => log.warn({ err: error }, "gagal membersihkan container job yatim"));
 }
 
+// Backup database harian dan pembersihan job/cache usang (Tahap 12): sekali saat start, lalu tiap jam.
+const maintenance = new Maintenance({
+  backupInto: database.backupInto,
+  db: database.db,
+  dataDir: config.dataDir,
+  now: Date.now,
+  onError: (error) => log.error({ err: error }, "pemeliharaan data gagal"),
+  onDone: (result) => {
+    if (result.backup !== null || result.backupsRemoved + result.jobDirs + result.derivedFiles > 0) {
+      log.info(result, "pemeliharaan data selesai");
+    }
+  },
+});
+maintenance.start();
+
 let stopping = false;
 async function shutdown(signal: string): Promise<void> {
   if (stopping) return;
   stopping = true;
   log.info({ signal }, "server berhenti");
   // WebSocket ditutup dulu: `server.stop()` menunggu sambungan yang masih terbuka.
+  await maintenance.stop();
   services.hub.stop();
   await server.stop();
   await services.close();

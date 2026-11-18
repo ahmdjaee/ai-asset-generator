@@ -15,6 +15,8 @@ export type DatabaseHandle = {
   db: Db;
   /** Koneksi mentah; hanya untuk PRAGMA, backup, dan tes. Query biasa lewat repositori. */
   sqlite: Database;
+  /** Salinan utuh database ke `path` (`VACUUM INTO`; file belum boleh ada). Sinkron, aman selama WAL aktif. */
+  backupInto(path: string): void;
   close(): void;
 };
 
@@ -31,5 +33,10 @@ export function openDatabase(path: string): DatabaseHandle {
   sqlite.run(`PRAGMA busy_timeout = ${SQLITE_BUSY_TIMEOUT_MS}`);
   const db = drizzle({ client: sqlite, schema });
   migrate(db, { migrationsFolder: MIGRATIONS_DIR });
-  return { db, sqlite, close: () => sqlite.close() };
+  return {
+    db,
+    sqlite,
+    backupInto: (path) => sqlite.run("VACUUM INTO ?", [path]),
+    close: () => sqlite.close(),
+  };
 }

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { SQLITE_BUSY_TIMEOUT_MS } from "../../shared/limits.ts";
 import { type DatabaseHandle, openDatabase } from "./client.ts";
 import { meta } from "./schema.ts";
@@ -52,6 +52,20 @@ describe("openDatabase", () => {
     } finally {
       again.close();
     }
+  });
+
+  test("backupInto: salinan utuh termasuk data yang masih di WAL; target yang sudah ada ditolak", async () => {
+    const { handle, path } = await openTemp();
+    handle.db.insert(meta).values({ key: "k", value: "v" }).run();
+    const copyPath = join(dirname(path), "salinan.db");
+    handle.backupInto(copyPath);
+    const copy = openDatabase(copyPath);
+    try {
+      expect(copy.db.select().from(meta).all()).toEqual([{ key: "k", value: "v" }]);
+    } finally {
+      copy.close();
+    }
+    expect(() => handle.backupInto(copyPath)).toThrow();
   });
 
   test("transaksi sinkron di-rollback bila ada error", async () => {
