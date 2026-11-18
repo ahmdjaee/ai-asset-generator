@@ -20,6 +20,9 @@ export function resetTimeMs(value: number): number {
   return value < EPOCH_MS_FLOOR ? value * 1000 : value;
 }
 
+/** Pesan untuk giliran yang gagal karena Claude Code belum login. */
+export const AUTH_REQUIRED_MESSAGE = "Claude Code belum login atau sesinya kedaluwarsa.";
+
 export function isUsageLimitText(text: string): boolean {
   return USAGE_LIMIT_ERROR_PREFIXES.some((prefix) => text.startsWith(prefix));
 }
@@ -92,6 +95,9 @@ export function toAgentEvents(message: SDKMessage): AgentEvent[] {
       return [];
     }
     case "assistant": {
+      // Teks pesan ini berbahasa Inggris dari CLI ("Not logged in · Please run /login"): diganti petunjuk app.
+      if (message.error === "authentication_failed")
+        return [{ type: "error", code: "AUTH_REQUIRED", message: AUTH_REQUIRED_MESSAGE }];
       const events: AgentEvent[] = [];
       for (const block of message.message.content) {
         if (block.type === "text" && block.text.trim() !== "") {

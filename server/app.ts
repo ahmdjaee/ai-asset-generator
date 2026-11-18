@@ -3,12 +3,14 @@ import { Hono } from "hono";
 import { createErrorHandler, errorBody } from "./http/errors.ts";
 import { hostOriginGuard } from "./http/guard.ts";
 import { type AssetRouteDeps, assetRoutes } from "./http/routes/assets.ts";
-import { healthRoutes } from "./http/routes/health.ts";
+import { type HealthRouteDeps, healthRoutes } from "./http/routes/health.ts";
+import { settingsRoutes } from "./http/routes/settings.ts";
 import type { Logger } from "./log.ts";
 import type { Hub } from "./realtime/hub.ts";
 import { realtimeRoute } from "./realtime/route.ts";
+import type { SettingsService } from "./services/settings.ts";
 
-export type ApiDeps = AssetRouteDeps & Readonly<{ hub: Hub }>;
+export type ApiDeps = AssetRouteDeps & HealthRouteDeps & Readonly<{ hub: Hub; settings: SettingsService }>;
 
 export type AppDeps = {
   log: Logger;
@@ -23,8 +25,9 @@ export type AppDeps = {
 /** Rute API. Tipe dari rantai ini (`AppType`) dipakai client `hc` di web. */
 function createApi(deps: ApiDeps) {
   return new Hono()
-    .route("/health", healthRoutes)
+    .route("/health", healthRoutes(deps))
     .route("/assets", assetRoutes(deps))
+    .route("/settings", settingsRoutes(deps.settings))
     .get("/ws", realtimeRoute(deps.hub));
 }
 

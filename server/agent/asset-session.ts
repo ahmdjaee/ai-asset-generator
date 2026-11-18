@@ -33,6 +33,11 @@ export type AssetSessionOptions = Readonly<{
   emit: (event: AgentEvent) => void;
   model?: string;
   effort?: EffortLevel;
+  /**
+   * Model dan effort dari Pengaturan, dibaca setiap kali proses Claude dimulai (perubahan berlaku untuk proses
+   * berikutnya). `model`/`effort` di atas menang (dipakai `eval:*`).
+   */
+  agentSettings?: () => Readonly<{ model: string; effort: EffortLevel }>;
   /** Session id lama untuk resume. */
   sessionId?: string;
   /** Bawaan: `runtime/knowledge`. */
@@ -85,18 +90,22 @@ export async function createAssetSession(options: AssetSessionOptions): Promise<
   const runner = new AssetRunner({
     port: options.port,
     // Server MCP dibuat baru per proses Claude: instance MCP tidak bisa dipakai dua transport.
-    sessionOptions: ({ resume, canUseTool }) =>
-      buildSessionOptions({
+    sessionOptions: ({ resume, canUseTool }) => {
+      const chosen = options.agentSettings?.();
+      const model = options.model ?? chosen?.model;
+      const effort = options.effort ?? chosen?.effort;
+      return buildSessionOptions({
         roots,
         resolvedRoots,
         systemPromptAppend: append,
         forge: forge.mcpServer(),
         canUseTool,
-        ...(options.model === undefined ? {} : { model: options.model }),
-        ...(options.effort === undefined ? {} : { effort: options.effort }),
+        ...(model === undefined ? {} : { model }),
+        ...(effort === undefined ? {} : { effort }),
         ...(resume === undefined ? {} : { resume }),
         ...(options.stderr === undefined ? {} : { stderr: options.stderr }),
-      }),
+      });
+    },
     checkTool: (toolName, input) => checkToolUse(toolName, input, resolvedRoots),
     emit: options.emit,
     onOwnerMessage: () => {

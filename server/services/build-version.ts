@@ -328,7 +328,7 @@ export function buildTexturedVersion(options: TexturedBuildOptions): Promise<Bui
   return buildVersion(options, {
     stage: "textured",
     kind: "build_textured",
-    limits: texturedJobLimits(options.tierId),
+    limits: texturedJobLimits(tier),
     command: texturedJobCommand(bakeSizes(tier)),
     glbName: "final.glb",
     outputs: TEXTURED_OUTPUT_MAX_BYTES,

@@ -97,7 +97,7 @@ export const AssetEventSchema: z.ZodType<AssetEvent> = z.discriminatedUnion("typ
   z.object({ type: z.literal("notice"), text: z.string() }),
   z.object({
     type: z.literal("error"),
-    code: z.enum(["USAGE_LIMIT", "SESSION_FAILED", "TOOL_DENIED"]),
+    code: z.enum(["USAGE_LIMIT", "AUTH_REQUIRED", "SESSION_FAILED", "TOOL_DENIED"]),
     message: z.string(),
     resetsAt: z.number().optional(),
   }),

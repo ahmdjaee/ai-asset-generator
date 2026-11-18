@@ -18,7 +18,11 @@ export type ServiceErrorCode =
   | "INVALID_FILE"
   | "VERSION_NOT_FOUND"
   | "FILE_NOT_FOUND"
-  | "EXPORT_FAILED";
+  | "EXPORT_FAILED"
+  | "INVALID_SETTINGS"
+  | "RUNTIME_BUSY"
+  | "RUNTIME_UNAVAILABLE"
+  | "RUNTIME_NOT_READY";
 
 export class ServiceError extends Error {
   readonly code: ServiceErrorCode;

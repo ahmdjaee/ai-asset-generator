@@ -98,6 +98,13 @@ export type AssetServiceDeps = Readonly<{
   newId?: () => string;
   /** Budget tier untuk aset BARU (Pengaturan menyusul di Tahap 11). Aset lama memakai snapshot-nya. */
   tierBudget?: (tierId: TierId) => TierBudget;
+  /** Giliran gagal karena Claude belum login: status akun yang di-cache perlu diperiksa ulang. */
+  onAuthRequired?: () => void;
+  /**
+   * Runtime 3D siap (Docker terjangkau, image ada)? Aksi yang mengirim pesan ke Claude ditolak bila belum, supaya
+   * kuota tidak terpakai untuk build yang pasti gagal. Bawaan: selalu siap.
+   */
+  runtimeReady?: () => Promise<boolean>;
   /** Error yang tidak bisa dikembalikan ke pemanggil (event sesi, pembersihan file). */
   onError?: (error: unknown, context: Readonly<{ assetId?: string; op: string }>) => void;
   /** Build berhasil membuat versi baru (mis. thumbnail Gudang dibuat di latar). */
@@ -327,6 +334,7 @@ export class AssetService {
     const name =
       input.name === undefined || input.name.trim() === "" ? nameFromPrompt(prompt) : assetName(input.name);
     const id = this.#newId();
+    await this.#requireRuntime();
     const prepared = await prepareUploads(input.files ?? [], this.#newId);
     const tier = (this.#deps.tierBudget ?? ((tierId: TierId) => DEFAULT_TIERS[tierId]))(input.tierId);
     const assetDir = this.assetDir(id);
@@ -526,8 +534,28 @@ export class AssetService {
   // ── Jalur aksi dan efek ─────────────────────────────────────────────────────────────────────────────────────
 
   async #act(assetId: string, action: AssetAction, recorded?: OwnerAction): Promise<void> {
+    await this.#gateRuntime(assetId, action);
     const applied = this.#apply(assetId, action, recorded);
     for (const effect of applied.effects) await this.#effect(assetId, effect, applied.before);
+  }
+
+  /**
+   * Gerbang domain dicek dulu (kodenya lebih spesifik), lalu runtime bila aksi akan mengirim pesan ke Claude.
+   * Status masih bisa berubah selama `await`; `#apply` memeriksa ulang.
+   */
+  async #gateRuntime(assetId: string, action: AssetAction): Promise<void> {
+    const gate = transition(this.get(assetId).state, action);
+    if (!gate.ok) throw new ServiceError(gate.code, gate.message);
+    if (gate.effects.some((effect) => effect.type === "deliver")) await this.#requireRuntime();
+  }
+
+  async #requireRuntime(): Promise<void> {
+    const ready = this.#deps.runtimeReady;
+    if (ready !== undefined && !(await ready()))
+      throw new ServiceError(
+        "RUNTIME_NOT_READY",
+        "Runtime 3D belum siap (Docker mati atau image belum dibangun). Buka Pengaturan untuk memperbaikinya.",
+      );
   }
 
   /** Menerapkan aksi (ServiceError bila ditolak) dan mencatat aksi pemilik; efek dijalankan pemanggil. */
@@ -566,8 +594,7 @@ export class AssetService {
     files: readonly UploadFile[],
   ): Promise<void> {
     if (files.length === 0) return this.#act(assetId, ownerAction(type, text, []));
-    const gate = transition(this.get(assetId).state, ownerAction(type, text, []));
-    if (!gate.ok) throw new ServiceError(gate.code, gate.message);
+    await this.#gateRuntime(assetId, ownerAction(type, text, []));
     const prepared = await prepareUploads(files, this.#newId);
     const action = ownerAction(type, text, prepared);
     const refsDir = join(this.assetDir(assetId), "refs");
@@ -738,7 +765,12 @@ export class AssetService {
         store.apply({ type: "question_closed" });
         break;
       case "error":
-        if (event.code === "USAGE_LIMIT" || event.code === "SESSION_FAILED") {
+        if (event.code === "AUTH_REQUIRED") this.#deps.onAuthRequired?.();
+        if (
+          event.code === "USAGE_LIMIT" ||
+          event.code === "AUTH_REQUIRED" ||
+          event.code === "SESSION_FAILED"
+        ) {
           store.apply({
             type: "failed",
             error: {

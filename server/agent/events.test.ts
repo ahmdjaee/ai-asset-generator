@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { isUsageLimitText, resultMeta, toAgentEvents } from "./events.ts";
+import { AUTH_REQUIRED_MESSAGE, isUsageLimitText, resultMeta, toAgentEvents } from "./events.ts";
 import {
   assistantMessage,
   deltaMessage,
@@ -31,6 +31,18 @@ describe("toAgentEvents", () => {
       { type: "assistant", text: "Saya tebalkan kakinya." },
       { type: "tool", toolUseId: "tu-1", name: "mcp__forge__build_base_mesh", input: { note: "kaki 4 cm" } },
     ]);
+  });
+
+  test("assistant ber-error authentication_failed → AUTH_REQUIRED; teks CLI berbahasa Inggris tidak tampil", () => {
+    const message = assistantMessage("S1", [text("Not logged in · Please run /login")], {
+      error: "authentication_failed",
+    });
+    expect(toAgentEvents(message)).toEqual([
+      { type: "error", code: "AUTH_REQUIRED", message: AUTH_REQUIRED_MESSAGE },
+    ]);
+    // Error lain (mis. server_error) tetap memakai jalur biasa.
+    const other = assistantMessage("S1", [text("API Error: 500")], { error: "server_error" });
+    expect(toAgentEvents(other)).toEqual([{ type: "assistant", text: "API Error: 500" }]);
   });
 
   test("delta teks dan berpikir", () => {

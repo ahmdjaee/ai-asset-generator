@@ -13,7 +13,7 @@ import { openTestStore, type TestStore } from "../services/test-support.ts";
 import { listVersions, versionDir } from "../services/versions.ts";
 import { createAssetSession } from "./asset-session.ts";
 import { FixtureAssetBuilder } from "./forge/fixture-builder.ts";
-import { type Scenario, type ScenarioActions, ScenarioAgentPort } from "./scenario-port.ts";
+import { SCENARIO_EMAIL, type Scenario, type ScenarioActions, ScenarioAgentPort } from "./scenario-port.ts";
 
 const KNOWLEDGE_DIR = join(import.meta.dir, "../../runtime/knowledge");
 
@@ -179,7 +179,11 @@ describe("ScenarioAgentPort", () => {
     const s = await setup(async () => undefined);
     s.send("halo");
     await s.next(isResult);
-    expect(await s.port.current.accountInfo()).toEqual({ subscriptionType: "palsu", tokenSource: "fake" });
+    expect(await s.port.current.accountInfo()).toEqual({
+      email: SCENARIO_EMAIL,
+      subscriptionType: "max",
+      tokenSource: "fake",
+    });
     expect((await s.port.current.supportedModels()).map((model) => model.value)).toContain("claude-opus-5-5");
     s.session.close();
     // Pesan setelah ditutup diabaikan.

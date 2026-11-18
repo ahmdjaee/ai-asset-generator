@@ -9,7 +9,7 @@ import { join } from "node:path";
 import sharp from "sharp";
 import type { StoredEvent } from "../../shared/asset-events.ts";
 import { THUMB_FILE, TURNTABLE_FILE } from "../../shared/derived-files.ts";
-import { ASSET_NAME_MAX_CHARS, BUILD_CAPS } from "../../shared/limits.ts";
+import { ASSET_NAME_MAX_CHARS, BUILD_CAPS, DEFAULT_TIERS } from "../../shared/limits.ts";
 import { createAssetSession } from "../agent/asset-session.ts";
 import { FIXTURE_PAIR, FixtureAssetBuilder } from "../agent/forge/fixture-builder.ts";
 import { createTestLibrary } from "../agent/forge/test-builder.ts";
@@ -73,6 +73,8 @@ function harness(
     /** Factory sesi gagal sebanyak ini dulu (sesi Claude tidak bisa disiapkan). */
     failAgents?: number;
     beforeRemoveDir?: (assetId: string) => Promise<void>;
+    /** Runtime 3D siap? (bawaan: selalu siap) */
+    runtimeReady?: () => Promise<boolean>;
   } = {},
 ): Harness {
   const handle = options.handle ?? openDatabase(":memory:");
@@ -114,6 +116,7 @@ function harness(
     onError: (error) => errors.push(error),
     onVersionCreated: (assetId, version) => created.push([assetId, version]),
     ...(options.beforeRemoveDir === undefined ? {} : { beforeRemoveDir: options.beforeRemoveDir }),
+    ...(options.runtimeReady === undefined ? {} : { runtimeReady: options.runtimeReady }),
   });
   cleanups.push(async () => {
     await service.close();
@@ -801,6 +804,44 @@ describe("AssetService — duplikat, hapus, gerbang, pemulihan", () => {
     expect(nameFromPrompt("Peti\nbaris kedua")).toBe("Peti");
     expect(nameFromPrompt("a".repeat(100))).toHaveLength(80);
     expect(nameFromPrompt("a".repeat(100)).endsWith("…")).toBe(true);
+  });
+});
+
+describe("AssetService — runtime belum siap", () => {
+  test("aksi yang membuat Claude bekerja ditolak RUNTIME_NOT_READY; aksi lain tetap jalan", async () => {
+    let ready = true;
+    const h = harness({ runtimeReady: async () => ready });
+    const asset = await h.service.create({ prompt: "Peti kayu", tierId: "ringan" });
+    await until(h, asset.id, idleIn("BASE_REVIEW"));
+
+    ready = false;
+    expect(await rejected(h.service.create({ prompt: "Kursi", tierId: "ringan" }))).toBe("RUNTIME_NOT_READY");
+    // Aset tidak dibuat setengah jadi.
+    expect(h.service.get(asset.id).id).toBe(asset.id);
+    expect(getAsset(h.handle.db, "aset-2", { includeDeleted: true })).toBeNull();
+    expect(await rejected(h.service.sendMessage(asset.id, "Lebih tinggi"))).toBe("RUNTIME_NOT_READY");
+    expect(await rejected(h.service.approve(asset.id))).toBe("RUNTIME_NOT_READY");
+    expect(h.service.get(asset.id).state).toMatchObject({ status: "BASE_REVIEW", runState: "idle" });
+    // Ganti nama dan aksi yang tidak mengirim pesan ke Claude tidak butuh runtime.
+    expect((await h.service.rename(asset.id, "Peti baru")).name).toBe("Peti baru");
+
+    ready = true;
+    await h.service.approve(asset.id);
+    await until(h, asset.id, idleIn("TEXTURE_REVIEW"));
+  });
+
+  test("gerbang aksi ditolak domain lebih dulu: kode aslinya tidak tertutup RUNTIME_NOT_READY", async () => {
+    const h = harness({ runtimeReady: async () => false });
+    const handle = h.handle;
+    insertAsset(handle.db, {
+      id: "lama",
+      name: "Lama",
+      prompt: "peti",
+      tierId: "ringan",
+      tier: DEFAULT_TIERS.ringan,
+      now: h.clock(),
+    });
+    expect(await rejected(h.service.approve("lama"))).toBe("NOT_IN_REVIEW");
   });
 });
 

@@ -39,13 +39,16 @@ afterEach(async () => {
   await removeTree(dataDir);
 });
 
-function addAsset(id: string, name: string): void {
+/** Budget Sedang yang diubah di Pengaturan sebelum aset dibuat (snapshot aset ≠ `DEFAULT_TIERS`). */
+const CUSTOM_SEDANG = { ...DEFAULT_TIERS.sedang, textures: { baseColor: 2048, normal: 1024 } };
+
+function addAsset(id: string, name: string, tier = DEFAULT_TIERS.sedang): void {
   insertAsset(handle.db, {
     id,
     name,
     prompt: "peti kayu\nbaris kedua",
     tierId: "sedang",
-    tier: DEFAULT_TIERS.sedang,
+    tier,
     now: 1,
   });
 }
@@ -197,8 +200,8 @@ describe("ExportService — satu versi", () => {
     expect(readme).not.toContain("tidak tersedia");
   });
 
-  test("Sumber aset final: base.py dan tekstur PNG; README mencatat .blend yang tidak ada", async () => {
-    addAsset("a1", "Peti Kayu");
+  test("Sumber aset final: base.py, budget aset, dan tekstur PNG; README mencatat .blend yang tidak ada", async () => {
+    addAsset("a1", "Peti Kayu", CUSTOM_SEDANG);
     await addBaseVersion("a1");
     await addTexturedVersion("a1");
     const files = unzipSync(new Uint8Array(await readFile((await service.file("a1", 2, "source")).path)));
@@ -208,6 +211,7 @@ describe("ExportService — satu versi", () => {
       "peti-kayu-v2-sumber/script.py",
       "peti-kayu-v2-sumber/base.py",
       "peti-kayu-v2-sumber/stats.json",
+      "peti-kayu-v2-sumber/budget.json",
       "peti-kayu-v2-sumber/textures/basecolor.png",
       "peti-kayu-v2-sumber/textures/normal.png",
       "peti-kayu-v2-sumber/textures/orm.png",
@@ -216,7 +220,15 @@ describe("ExportService — satu versi", () => {
       expect((await sharp(files[name] ?? new Uint8Array()).metadata()).format).toBe("png");
     }
     const readme = strFromU8(files["peti-kayu-v2-sumber/README.md"] ?? new Uint8Array());
-    expect(readme).toContain("--textured sedang --base-script peti-kayu-v2-sumber/base.py");
+    // Skrip dijalankan ulang dengan budget aset ini (snapshot saat aset dibuat), bukan budget bawaan.
+    expect(JSON.parse(strFromU8(files["peti-kayu-v2-sumber/budget.json"] ?? new Uint8Array()))).toEqual({
+      tierId: "sedang",
+      budget: CUSTOM_SEDANG,
+    });
+    expect(readme).toContain(
+      "--textured sedang --budget peti-kayu-v2-sumber/budget.json --base-script peti-kayu-v2-sumber/base.py",
+    );
+    expect(readme).toContain("| `budget.json` |");
     expect(readme).toContain("`.blend` tidak tersedia");
     expect(readme).not.toContain("jangan izinkan");
   });

@@ -120,6 +120,9 @@ export function buildRunArgs(spec: RunSpec): string[] {
     "--label",
     `${OWNER_LABEL}=${spec.owner}`,
     "--init",
+    // Image hanya dari `runtime:build` lokal: image yang belum ada gagal jelas, tidak ditarik dari registry.
+    "--pull",
+    "never",
     "--network",
     "none",
     "--read-only",
@@ -280,17 +283,50 @@ export async function imageExists(tag: string): Promise<boolean> {
   return result.exitCode === 0;
 }
 
-/** `docker build` dengan output build diteruskan ke terminal. */
-export async function buildImage(contextDir: string, tag: string, signal?: AbortSignal): Promise<void> {
+/** Versi Docker Engine, atau `null` bila daemon tidak terjangkau (CLI tidak ada, daemon mati, tanpa izin). */
+export async function dockerServerVersion(): Promise<string | null> {
+  const result = await dockerCli(["version", "--format", "{{.Server.Version}}"]).catch(() => null);
+  if (result === null || result.exitCode !== 0) return null;
+  const version = result.stdout.trim();
+  return /^[0-9][0-9A-Za-z.+-]{0,40}$/.test(version) ? version : null;
+}
+
+/** Baris terakhir output build yang dibawa error (bukan seluruh log). */
+const BUILD_TAIL_BYTES = 2000;
+
+export type BuildImageOptions = Readonly<{
+  signal?: AbortSignal;
+  /** `inherit` (bawaan, skrip CLI): output ke terminal. `capture`: ekornya disimpan untuk pesan error di app. */
+  output?: "inherit" | "capture";
+}>;
+
+/** `docker build`. Gagal → `DOCKER_FAILED` dengan ekor output (mode `capture`). */
+export async function buildImage(
+  contextDir: string,
+  tag: string,
+  options: BuildImageOptions = {},
+): Promise<void> {
   assertMountPath("contextDir", contextDir);
+  const capture = options.output === "capture";
   const proc = Bun.spawn(["docker", "build", "--tag", tag, contextDir], {
-    stdio: ["ignore", "inherit", "inherit"],
+    stdio: ["ignore", capture ? "pipe" : "inherit", capture ? "pipe" : "inherit"],
     timeout: IMAGE_BUILD_TIMEOUT_MS,
     killSignal: "SIGTERM",
-    signal,
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
   });
-  const exitCode = await proc.exited;
-  if (exitCode !== 0) throw new RuntimeError("DOCKER_FAILED", `docker build gagal (kode ${exitCode})`);
+  const tail = new TailBuffer(BUILD_TAIL_BYTES);
+  const readers =
+    proc.stdout instanceof ReadableStream && proc.stderr instanceof ReadableStream
+      ? [proc.stdout, proc.stderr].map((stream) => forEachLine(stream, (line) => tail.append(`${line}\n`)))
+      : [];
+  const [exitCode] = await Promise.all([proc.exited, ...readers]);
+  if (exitCode !== 0) {
+    const detail = tail.toString().trim();
+    throw new RuntimeError(
+      "DOCKER_FAILED",
+      `docker build gagal (kode ${exitCode})${detail === "" ? "" : `:\n${detail}`}`,
+    );
+  }
 }
 
 /**

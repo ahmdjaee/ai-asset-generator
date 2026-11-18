@@ -102,8 +102,13 @@ describe("bakeSizes & texturedJobLimits", () => {
   });
 
   test("Maksimal 600 dtk, tier lain 300 dtk, RAM 2,5 GB", () => {
-    expect(texturedJobLimits("maksimal").timeoutMs).toBe(600_000);
-    expect(texturedJobLimits("sedang").timeoutMs).toBe(300_000);
-    expect(texturedJobLimits("ringan").memoryBytes).toBe(2560 * 1024 * 1024);
+    expect(texturedJobLimits(DEFAULT_TIERS.maksimal).timeoutMs).toBe(600_000);
+    expect(texturedJobLimits(DEFAULT_TIERS.sedang).timeoutMs).toBe(300_000);
+    expect(texturedJobLimits(DEFAULT_TIERS.ringan).memoryBytes).toBe(2560 * 1024 * 1024);
+    // Budget yang diubah di Pengaturan: batas job mengikuti isi budget, bukan nama tier.
+    const ringanBesar = { ...DEFAULT_TIERS.ringan, textures: { baseColor: 2048 } };
+    expect(texturedJobLimits(ringanBesar).timeoutMs).toBe(600_000);
+    const sedangPadat = { ...DEFAULT_TIERS.sedang, triangles: { target: 20_000, max: 30_000 } };
+    expect(texturedJobLimits(sedangPadat).timeoutMs).toBe(600_000);
   });
 });

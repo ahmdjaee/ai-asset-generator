@@ -64,6 +64,10 @@ export const SERVICE_STATUS: Readonly<Record<ServiceErrorCode, ContentfulStatusC
   NOT_INTERRUPTED: 409,
   SHAPE_CHANGE_NOT_ALLOWED: 409,
   EXPORT_FAILED: 500,
+  INVALID_SETTINGS: 400,
+  RUNTIME_BUSY: 409,
+  RUNTIME_UNAVAILABLE: 409,
+  RUNTIME_NOT_READY: 409,
 };
 
 export function createErrorHandler(log: Logger) {

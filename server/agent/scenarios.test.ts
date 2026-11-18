@@ -43,6 +43,10 @@ function fakeClaude(
       signals.push("mati");
       throw new Error("mati");
     },
+    loggedOut: () => {
+      signals.push("keluar");
+      throw new Error("keluar");
+    },
   };
   return { claude, said, streamed, calls, signals };
 }
@@ -190,5 +194,11 @@ describe("defaultScenario", () => {
       () => undefined,
     );
     expect(crash.signals).toEqual(["mati"]);
+
+    const loggedOut = fakeClaude({ list_versions: status("BRIEFING") });
+    await defaultScenario()({ text: `Peti ${SCENARIO_MARKERS.loggedOut}`, index: 1 }, loggedOut.claude).catch(
+      () => undefined,
+    );
+    expect(loggedOut.signals).toEqual(["keluar"]);
   });
 });

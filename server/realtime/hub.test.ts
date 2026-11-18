@@ -115,6 +115,18 @@ describe("Hub — langganan", () => {
     ]);
   });
 
+  test("global: Pengaturan disimpan dan status runtime berubah diteruskan apa adanya", () => {
+    const socket = connect();
+    send(socket, { op: "sub", sid: 1, topic: "global" });
+    bus.publishGlobal({ type: "settings" });
+    bus.publishGlobal({ type: "runtime" });
+    expect(socket.take()).toEqual([
+      { sid: 1, op: "ready" },
+      { sid: 1, event: { type: "settings" } },
+      { sid: 1, event: { type: "runtime" } },
+    ]);
+  });
+
   test("aset: event tersimpan dan live setelah ready; aset dihapus diberitahukan", () => {
     const socket = connect();
     send(socket, { op: "sub", sid: 7, topic: "asset:a1" });

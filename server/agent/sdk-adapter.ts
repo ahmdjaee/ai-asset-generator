@@ -1,6 +1,6 @@
 import { type AccountInfo, type Query, query, type SDKUserMessage } from "@anthropic-ai/claude-agent-sdk";
-import { agentEnv } from "../config.ts";
 import { InputQueue } from "./input-queue.ts";
+import { buildProbeOptions } from "./options.ts";
 import type { AgentOptions, AgentPort, AgentSession, InterruptReceipt } from "./port.ts";
 
 /**
@@ -74,12 +74,7 @@ export const sdkAgentPort: AgentPort = {
 /** Identitas sesi yang dipakai SDK. Bukti bahwa sesi login Claude Code terpakai, bukan API key. */
 export async function readAccountInfo(): Promise<AccountInfo> {
   // Sesi tanpa pesan: proses Claude Code hidup untuk `accountInfo()`, tanpa memanggil model.
-  const session = sdkAgentPort.start({
-    disallowedTools: ["*"],
-    settingSources: [],
-    persistSession: false,
-    env: agentEnv(),
-  });
+  const session = sdkAgentPort.start(buildProbeOptions());
   try {
     return await session.accountInfo();
   } finally {

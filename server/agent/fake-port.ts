@@ -90,12 +90,19 @@ export class FakeAgentSession implements AgentSession {
     this.end();
   }
 
-  async accountInfo(): Promise<AccountInfo> {
-    return { email: "pemilik@contoh.invalid", subscriptionType: "tes" };
+  /** Jawaban `accountInfo()`; tes boleh menggantinya (mis. belum login, macet, gagal). */
+  account: () => Promise<AccountInfo> = async () => ({
+    email: "pemilik@contoh.invalid",
+    subscriptionType: "tes",
+  });
+  models: () => Promise<ModelInfo[]> = async () => [];
+
+  accountInfo(): Promise<AccountInfo> {
+    return this.account();
   }
 
-  async supportedModels(): Promise<ModelInfo[]> {
-    return [];
+  supportedModels(): Promise<ModelInfo[]> {
+    return this.models();
   }
 }
 
@@ -103,6 +110,8 @@ export class FakeAgentPort implements AgentPort {
   readonly sessions: FakeAgentSession[] = [];
   /** Bila diisi, `start()` berikutnya gagal dengan error ini (mis. CLI `claude` tidak ditemukan). */
   startError: Error | undefined;
+  /** Dipanggil untuk setiap sesi baru sebelum dikembalikan (mis. mengatur `account`). */
+  onStart: ((session: FakeAgentSession) => void) | undefined;
 
   start(options: AgentOptions): FakeAgentSession {
     const error = this.startError;
@@ -111,6 +120,7 @@ export class FakeAgentPort implements AgentPort {
       throw error;
     }
     const session = new FakeAgentSession(options);
+    this.onStart?.(session);
     this.sessions.push(session);
     return session;
   }

@@ -2,6 +2,7 @@
  * Satu-satunya factory opsi sesi Claude (AGENTS.md §6). Semua sesi aset memakai fungsi ini.
  */
 import type { CanUseTool, EffortLevel, McpSdkServerConfigWithInstance } from "@anthropic-ai/claude-agent-sdk";
+import { DEFAULT_EFFORT, DEFAULT_MODEL } from "../../shared/settings.ts";
 import { agentEnv } from "../config.ts";
 import {
   type AgentRoots,
@@ -14,9 +15,7 @@ import {
 } from "./guard.ts";
 import type { AgentOptions } from "./port.ts";
 
-export const DEFAULT_MODEL = "claude-opus-5-5";
-/** Eksplisit: bawaan Opus 5.5 adalah `medium`. */
-export const DEFAULT_EFFORT: EffortLevel = "high";
+export { DEFAULT_EFFORT, DEFAULT_MODEL };
 
 export type SessionOptionsInput = Readonly<{
   model?: string;
@@ -60,5 +59,21 @@ export function buildSessionOptions(input: SessionOptionsInput): AgentOptions {
     ...(input.resume === undefined ? {} : { resume: input.resume }),
     ...(input.stderr === undefined ? {} : { stderr: input.stderr }),
     env: input.env ?? agentEnv(),
+  };
+}
+
+/**
+ * Opsi proses pemeriksa akun (`accountInfo()` + `supportedModels()`): tanpa tool, tanpa settings pemilik, tanpa
+ * transkrip, dan tanpa pesan, jadi tidak memanggil model dan tidak memakai kuota.
+ */
+export function buildProbeOptions(env: Record<string, string | undefined> = agentEnv()): AgentOptions {
+  return {
+    tools: [],
+    disallowedTools: ["*"],
+    settingSources: [],
+    strictMcpConfig: true,
+    persistSession: false,
+    permissionMode: "default",
+    env,
   };
 }

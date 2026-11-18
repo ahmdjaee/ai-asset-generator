@@ -34,13 +34,20 @@ import { fileChunks, type ZipEntry, zipStream } from "./zip-stream.ts";
 /** Nama cache di `derived/vN/`. */
 export const UNITY_EXPORT_FILE = "export-unity.glb";
 
+/** Naik bila isi ZIP Sumber berubah (2: `budget.json`), supaya cache lama tidak dipakai lagi. */
+const SOURCE_FORMAT = 2;
+
 /**
  * Cache ZIP Sumber per nama aset: nama ada di folder akar dan README, jadi setelah ganti nama (atau di duplikat
  * bernama lain) ZIP dibuat ulang. GLB Unity tidak memuat nama aset, jadi cukup satu per versi.
  */
 export function sourceExportFile(assetName: string): string {
-  return `export-source-${createHash("sha256").update(assetName).digest("hex").slice(0, 16)}.zip`;
+  const hash = createHash("sha256").update(`${SOURCE_FORMAT}\0${assetName}`).digest("hex").slice(0, 16);
+  return `export-source-${hash}.zip`;
 }
+
+/** File budget di ZIP Sumber aset final: snapshot budget aset untuk `probe --budget`. */
+const BUDGET_FILE = "budget.json";
 
 /** Perkiraan ukuran README di ZIP Sumber. */
 const README_BYTES = 2048;
@@ -290,6 +297,18 @@ export class ExportService {
           mtime,
         })),
       )),
+      ...(record.stage === "textured"
+        ? [
+            {
+              name: `${root}/${BUDGET_FILE}`,
+              content: new TextEncoder().encode(
+                `${JSON.stringify({ tierId: asset.tierId, budget: asset.tier }, null, 2)}\n`,
+              ),
+              compress: true,
+              mtime,
+            },
+          ]
+        : []),
       ...textures.map((texture) => ({
         name: `${root}/textures/${texture.name}`,
         content: texture.png,
@@ -368,11 +387,12 @@ export function sourceReadme(input: {
       ? "| `script.py` | Skrip material tahap tekstur. Memanggil `scene.run_base()` untuk membangun ulang bentuk dari `base.py` |"
       : "| `script.py` | Skrip bentuk dasar |",
     has("base.py") ? "| `base.py` | Skrip bentuk dasar yang disetujui |" : null,
+    textured ? `| \`${BUDGET_FILE}\` | Budget tier aset ini saat dibuat (ukuran bake dan batas) |` : null,
     textures.length > 0 ? "| `textures/*.png` | Tekstur hasil bake (atlas) dari GLB versi ini |" : null,
     "| `stats.json` | Statistik, budget, dan hasil validator versi ini |",
   ].filter((row) => row !== null);
   const command = textured
-    ? `bun scripts/runtime.ts probe ${root}/script.py --textured ${asset.tierId} --base-script ${root}/base.py --out .tmp/ulang`
+    ? `bun scripts/runtime.ts probe ${root}/script.py --textured ${asset.tierId} --budget ${root}/${BUDGET_FILE} --base-script ${root}/base.py --out .tmp/ulang`
     : `bun scripts/runtime.ts probe ${root}/script.py --base --out .tmp/ulang`;
   return [
     `# ${asset.name} — sumber v${record.n}`,

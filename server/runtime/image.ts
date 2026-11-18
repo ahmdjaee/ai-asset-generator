@@ -36,3 +36,9 @@ export async function requireRuntimeImage(): Promise<string> {
 
 /** Referensi assetkit dan cookbook untuk Claude (dibaca lewat Read, hanya baca). */
 export const KNOWLEDGE_DIR = join(RUNTIME_DIR, "knowledge");
+
+/** Versi Blender di image = versi `bpy` yang di-pin di `requirements.txt` (bagian dari hash tag image). */
+export async function blenderVersion(runtimeDir: string = RUNTIME_DIR): Promise<string | null> {
+  const text = await readFile(join(runtimeDir, "requirements.txt"), "utf8").catch(() => "");
+  return /^bpy==([0-9][0-9.]*)\s*$/m.exec(text)?.[1] ?? null;
+}

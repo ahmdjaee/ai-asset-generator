@@ -9,7 +9,8 @@ export type AskQuestion = Readonly<{
   multiSelect: boolean;
 }>;
 
-export type AgentErrorCode = "USAGE_LIMIT" | "SESSION_FAILED" | "TOOL_DENIED";
+/** `AUTH_REQUIRED`: Claude Code belum login (atau sesinya kedaluwarsa). */
+export type AgentErrorCode = "USAGE_LIMIT" | "AUTH_REQUIRED" | "SESSION_FAILED" | "TOOL_DENIED";
 
 /** Jenis lampiran pemilik: gambar referensi atau model 3D. */
 export const ATTACHMENT_KINDS = ["image", "model"] as const;

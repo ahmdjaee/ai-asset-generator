@@ -6,6 +6,8 @@ import { Glob } from "bun";
 
 const ROOT = join(import.meta.dir, "../..");
 const SOURCE_DIRS = ["server", "shared", "web", "scripts", "tests"];
+/** Satu-satunya file teks UI (AGENTS.md §2). */
+const UI_TEXT = "web/i18n/id.ts";
 
 async function sources(): Promise<string[]> {
   const files: string[] = [];
@@ -50,7 +52,11 @@ describe("batas Agent SDK", () => {
       const path = relative(ROOT, file);
       if (path.endsWith(".test.ts")) continue;
       const content = await readFile(file, "utf8");
-      if (/ANTHROPIC_(API_KEY|AUTH_TOKEN)/.test(content) && path !== "server/config.ts") offenders.push(path);
+      if (!/ANTHROPIC_(API_KEY|AUTH_TOKEN)/.test(content) || path === "server/config.ts") continue;
+      // Teks UI boleh menyebut nama variabelnya (petunjuk "hapus ANTHROPIC_API_KEY" di banner dan Pengaturan), asal
+      // file teks itu sendiri tidak menyentuh env sama sekali.
+      if (path === UI_TEXT && !/\b(process|Bun)\.env\b|import\.meta\.env/.test(content)) continue;
+      offenders.push(path);
     }
     expect(offenders).toEqual([]);
   });

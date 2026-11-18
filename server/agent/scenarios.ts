@@ -7,7 +7,8 @@
  * - `[tanya]` / `[tanya-banyak]`: kartu pertanyaan pilih satu / pilih banyak sebelum brief;
  * - `[macet]`: berpikir, mulai menulis jawaban (hanya delta stream), lalu diam sampai Stop;
  * - `[batas]`: batas pemakaian tercapai (reset 1 jam lagi menurut jam yang disuntikkan);
- * - `[mati]`: proses Claude mati di tengah giliran.
+ * - `[mati]`: proses Claude mati di tengah giliran;
+ * - `[keluar]`: Claude Code belum login (`authentication_failed`).
  */
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -23,6 +24,7 @@ export const SCENARIO_MARKERS = {
   hang: "[macet]",
   usageLimit: "[batas]",
   crash: "[mati]",
+  loggedOut: "[keluar]",
 } as const;
 
 /** Awalan pesan yang disusun app dan judul kutipan permintaan terakhir (`outboundText`). */
@@ -176,6 +178,7 @@ export function defaultScenario(options: DefaultScenarioOptions = {}): Scenario 
       claude.usageLimit(Math.floor((now() + 3_600_000) / 1000));
     }
     if (owner && turn.text.includes(SCENARIO_MARKERS.crash)) claude.crash();
+    if (owner && turn.text.includes(SCENARIO_MARKERS.loggedOut)) claude.loggedOut();
     if (owner && turn.text.includes(SCENARIO_MARKERS.hang)) {
       claude.think("Menimbang beberapa pilihan bentuk…");
       claude.streamText(HANG_PARTIAL_TEXT);

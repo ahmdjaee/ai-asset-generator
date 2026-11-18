@@ -22,7 +22,7 @@ export const RUN_STATES = ["idle", "running", "waiting_user", "failed", "interru
 export type RunState = (typeof RUN_STATES)[number];
 
 /** Kode error proses yang ditampilkan ke pemilik (bukan error tool `forge`). */
-export const RUN_ERROR_CODES = ["USAGE_LIMIT", "SESSION_FAILED", "TURN_FAILED"] as const;
+export const RUN_ERROR_CODES = ["USAGE_LIMIT", "AUTH_REQUIRED", "SESSION_FAILED", "TURN_FAILED"] as const;
 export type RunErrorCode = (typeof RUN_ERROR_CODES)[number];
 
 export const LastError = z.object({

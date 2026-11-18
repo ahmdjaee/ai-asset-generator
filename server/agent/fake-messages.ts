@@ -4,6 +4,7 @@
  */
 import type {
   SDKAssistantMessage,
+  SDKAssistantMessageError,
   SDKMessage,
   SDKPartialAssistantMessage,
   SDKRateLimitEvent,
@@ -57,9 +58,14 @@ export function initMessage(sessionId: string, model = "claude-opus-5-5"): SDKMe
 
 type Block = SDKAssistantMessage["message"]["content"][number];
 
-export function assistantMessage(sessionId: string, content: Block[]): SDKMessage {
+export function assistantMessage(
+  sessionId: string,
+  content: Block[],
+  options: { error?: SDKAssistantMessageError } = {},
+): SDKMessage {
   return {
     type: "assistant",
+    ...(options.error === undefined ? {} : { error: options.error }),
     message: {
       id: `msg_${counter}`,
       container: null,

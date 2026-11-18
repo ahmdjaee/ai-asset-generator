@@ -235,6 +235,12 @@ export const CONTACT_SHEET_MAX_PX = 1024;
 /** Ukuran satu tile sudut di contact sheet (3 × 2 tile + jarak 8 px = 1016 × 680). */
 export const RENDER_TILE_PX = 328;
 export const CONTACT_SHEET_GAP_PX = 8;
+/**
+ * Kebijakan restart Chromium renderer (Tahap 12): browser diluncurkan ulang setelah sekian render (membatasi memori
+ * yang menumpuk di proses yang hidup lama) dan ditutup setelah menganggur (±200 MB RAM kembali saat tidak dipakai).
+ */
+export const RENDER_RECYCLE_AFTER = 200;
+export const RENDER_IDLE_CLOSE_MS = 10 * 60_000;
 /** Ukuran maksimum GLB yang boleh dimuat renderer. */
 export const RENDER_MAX_GLB_BYTES = 50 * MIB;
 
@@ -315,7 +321,51 @@ export function bakeSizes(tier: TierBudget): {
   };
 }
 
-/** Batas job bertekstur untuk tier: Maksimal mendapat 600 dtk. */
-export function texturedJobLimits(tierId: TierId): JobLimits {
-  return tierId === "maksimal" ? TEXTURED_MAX_JOB_LIMITS : TEXTURED_JOB_LIMITS;
+/**
+ * Batas job bertekstur dari budget (bukan nama tier, karena budget bisa diubah di Pengaturan): atlas ≥ 2048 px atau
+ * segitiga di atas maks Sedang bawaan mendapat 600 dtk, sama seperti Maksimal bawaan.
+ */
+export function texturedJobLimits(tier: TierBudget): JobLimits {
+  const heavy = bakeSizes(tier).baseColor >= 2048 || tier.triangles.max > DEFAULT_TIERS.sedang.triangles.max;
+  return heavy ? TEXTURED_MAX_JOB_LIMITS : TEXTURED_JOB_LIMITS;
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Budget yang bisa diubah di Pengaturan (PLAN Tahap 11). Batas atas = Maksimal bawaan, yang waktu bake dan RAM-nya
+// sudah diukur di mesin ini (Tahap 4); batas bawah supaya aset masih masuk akal.
+
+export const TIER_BUDGET_LIMITS = {
+  triangles: { min: 100, max: DEFAULT_TIERS.maksimal.triangles.max },
+  materials: { min: 1, max: DEFAULT_TIERS.maksimal.materials },
+  webBytes: { min: 50 * KB, max: DEFAULT_TIERS.maksimal.webBytes.max },
+} as const;
+
+/** Sisi tekstur yang bisa dipilih (px). */
+export const TEXTURE_SIZE_OPTIONS = [256, 512, 1024, 2048] as const;
+/** Slot tekstur yang diatur di Pengaturan. `baseColor` wajib ada (atlas warna selalu di-bake). */
+export const EDITABLE_TEXTURE_SLOTS = ["baseColor", "normal", "orm", "emissive"] as const;
+
+// ---------------------------------------------------------------------------------------------------------------
+// Pemeliharaan data (PLAN Tahap 12): backup database harian dan pembersihan file sementara/cache.
+
+/** Pemeliharaan dicek setiap jam; backup hanya dibuat bila backup hari ini belum ada. */
+export const MAINTENANCE_INTERVAL_MS = 60 * 60_000;
+/** Jumlah backup harian `data/backups/app-YYYYMMDD.db` yang disimpan. */
+export const BACKUPS_KEEP = 7;
+/** Folder job yang tertinggal (server mati di tengah job). Job terlama 600 dtk, jadi sehari pasti usang. */
+export const JOB_DIR_STALE_MS = 24 * 60 * 60_000;
+/** Cache ekspor Unity/Sumber di `derived/vN/` yang tidak diubah selama ini dibuang; dibuat ulang saat diunduh. */
+export const EXPORT_CACHE_STALE_MS = 30 * 24 * 60 * 60_000;
+/** File `.tmp` sisa tulis atomik yang lebih tua dari ini pasti bukan tulisan yang sedang berjalan. */
+export const TEMP_FILE_STALE_MS = 60 * 60_000;
+
+// ---------------------------------------------------------------------------------------------------------------
+// `bun run doctor` (PLAN Tahap 12)
+
+/** Versi Bun minimum (sama dengan TECH_STACK). */
+export const DOCTOR_MIN_BUN = "1.4.4";
+/** Ruang kosong di disk `data/`: di bawah batas peringatan = kuning, di bawah batas minimum = gagal. */
+export const DOCTOR_DISK_WARN_BYTES = 10 * 1024 * MIB;
+export const DOCTOR_DISK_MIN_BYTES = 2 * 1024 * MIB;
+/** Batas waktu satu pemeriksaan doctor (Docker, akun Claude, port). */
+export const DOCTOR_CHECK_TIMEOUT_MS = 30_000;

@@ -7,7 +7,7 @@
  * - `sid` dipilih klien per langganan, jadi dua komponen boleh menyimak topik yang sama dengan `after` berbeda.
  * - `ready` dikirim setelah langganan terpasang dan replay selesai: snapshot HTTP yang diambil sesudah `ready` dijamin
  *   tidak kehilangan event di antaranya (event ganda disaring klien lewat `seq`).
- * - Topik `global`: perubahan daftar aset dan progres build (live). Topik `asset:<id>`: event thread (tersimpan dan
+ * - Topik `global`: perubahan daftar aset, progres build (live), Pengaturan, dan status runtime. Topik `asset:<id>`: event thread (tersimpan dan
  *   live), `resync` bila klien tertinggal terlalu jauh, `asset_deleted` saat aset dihapus.
  */
 import { z } from "zod";
@@ -49,6 +49,12 @@ export const TopicEvent = z.discriminatedUnion("type", [
     stage: z.enum(["base", "textured"]),
     pct: z.number().min(0).max(100),
   }),
+  /** Topik `global`: Pengaturan disimpan (tab lain mengambil ulang). */
+  z.object({ type: z.literal("settings") }),
+  /** Topik `global`: status runtime berubah (bangun image mulai/selesai). */
+  z.object({ type: z.literal("runtime") }),
+  /** Topik `global`: status login Claude perlu diperiksa ulang (giliran gagal karena belum login). */
+  z.object({ type: z.literal("auth") }),
 ]);
 export type TopicEvent = z.infer<typeof TopicEvent>;
 

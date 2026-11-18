@@ -43,6 +43,8 @@ import type {
 } from "./port.ts";
 
 export const SCENARIO_MODEL = "claude-opus-5-5";
+/** Akun palsu mode `AGENT_DRIVER=fake` (placeholder, bukan data pemilik). */
+export const SCENARIO_EMAIL = "pemilik@contoh.invalid";
 
 export type ScenarioTurn = Readonly<{ text: string; index: number }>;
 
@@ -69,6 +71,8 @@ export interface ScenarioActions {
   hang(): Promise<never>;
   /** Proses Claude mati: aliran pesan berakhir dengan error. */
   crash(message?: string): never;
+  /** Claude Code belum login: pesan assistant ber-`error: authentication_failed`, giliran gagal. */
+  loggedOut(): never;
 }
 
 export type Scenario = (turn: ScenarioTurn, claude: ScenarioActions) => Promise<void>;
@@ -90,6 +94,8 @@ class UsageLimitSignal extends Error {
 }
 
 class CrashSignal extends Error {}
+
+class LoggedOutSignal extends Error {}
 
 const Answers = z.record(z.string(), z.string());
 
@@ -161,16 +167,25 @@ export class ScenarioSession implements AgentSession {
   }
 
   async accountInfo(): Promise<AccountInfo> {
-    return { subscriptionType: "palsu", tokenSource: "fake" };
+    // Alamat placeholder (domain .invalid), bukan data pemilik.
+    return { email: SCENARIO_EMAIL, subscriptionType: "max", tokenSource: "fake" };
   }
 
   async supportedModels(): Promise<ModelInfo[]> {
     return [
-      { value: SCENARIO_MODEL, displayName: "Opus 5.5", description: "Model palsu (AGENT_DRIVER=fake)" },
+      {
+        value: SCENARIO_MODEL,
+        displayName: "Opus 5.5",
+        description: "Model palsu (AGENT_DRIVER=fake)",
+        supportsEffort: true,
+        supportedEffortLevels: ["low", "medium", "high", "xhigh", "max"],
+      },
       {
         value: "claude-sonnet-5-5",
         displayName: "Sonnet 5.5",
         description: "Model palsu (AGENT_DRIVER=fake)",
+        supportsEffort: true,
+        supportedEffortLevels: ["low", "medium", "high"],
       },
     ];
   }
@@ -229,6 +244,13 @@ export class ScenarioSession implements AgentSession {
       }
       if (error instanceof UsageLimitSignal) {
         this.#emit(rateLimitMessage(this.sessionId, "rejected", error.resetsAt));
+      } else if (error instanceof LoggedOutSignal) {
+        // Bentuk pesan CLI saat belum login (teks bahasa Inggris + `error`).
+        this.#emit(
+          assistantMessage(this.sessionId, [text("Not logged in · Please run /login")], {
+            error: "authentication_failed",
+          }),
+        );
       } else if (!(error instanceof ScenarioInterrupted) && !controller.signal.aborted) {
         // Bug skenario: terlihat di thread supaya tes mudah dilacak.
         this.#emit(assistantMessage(this.sessionId, [text(`Skenario gagal: ${String(error)}`)]));
@@ -281,6 +303,9 @@ export class ScenarioSession implements AgentSession {
         }),
       crash: (message = "proses Claude berhenti mendadak") => {
         throw new CrashSignal(message);
+      },
+      loggedOut: () => {
+        throw new LoggedOutSignal("belum login");
       },
     };
   }

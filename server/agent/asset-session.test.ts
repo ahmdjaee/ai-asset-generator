@@ -48,7 +48,13 @@ async function forgeClient(session: FakeAgentSession): Promise<Client> {
   return client;
 }
 
-async function setup(options: { tierId?: TierId; state?: AssetState } = {}) {
+async function setup(
+  options: {
+    tierId?: TierId;
+    state?: AssetState;
+    agentSettings?: () => Readonly<{ model: string; effort: "low" | "medium" | "high" | "xhigh" | "max" }>;
+  } = {},
+) {
   const tierId = options.tierId ?? "sedang";
   const test = openTestStore({ tierId, ...(options.state === undefined ? {} : { state: options.state }) });
   stores.push(test);
@@ -62,6 +68,7 @@ async function setup(options: { tierId?: TierId; state?: AssetState } = {}) {
     library: new MaterialLibrary(join(base, "pustaka")),
     emit: (event) => events.push(event),
     knowledgeDir: KNOWLEDGE_DIR,
+    ...(options.agentSettings === undefined ? {} : { agentSettings: options.agentSettings }),
   });
   // `agent` utuh (bukan spread): `sessionId` adalah getter.
   return { ...session, agent: session, port, events, test };
@@ -138,6 +145,31 @@ describe("createAssetSession", () => {
     s.deliver({ kind: "owner", text: "kayunya lebih gelap" });
     const second = await s.port.current.lastSent(2);
     expect(second.message.content).toBe("kayunya lebih gelap");
+  });
+
+  test("model dan effort Pengaturan dibaca saat proses Claude dimulai; proses berikutnya memakai nilai baru", async () => {
+    let chosen = { model: "claude-sonnet-5-5", effort: "medium" as const };
+    const s = await setup({ agentSettings: () => chosen });
+    s.deliver({ kind: "owner", text: "Buatkan kursi." });
+    expect(s.port.current.options).toMatchObject({ model: "claude-sonnet-5-5", effort: "medium" });
+    chosen = { model: "claude-opus-5-5", effort: "medium" };
+    const first = s.port.current;
+    first.push(initMessage("S1"), resultMessage("S1", [first.sent[0]?.uuid ?? ""]));
+    // Pool menutup proses yang idle; pesan berikutnya memulai proses baru (resume).
+    for (let tick = 0; tick < 50 && !s.runner.evictable; tick += 1)
+      await new Promise((resolve) => setImmediate(resolve));
+    s.runner.evict();
+    s.deliver({ kind: "owner", text: "Lanjut." });
+    for (let tick = 0; tick < 50 && s.port.sessions.length < 2; tick += 1)
+      await new Promise((resolve) => setImmediate(resolve));
+    expect(s.port.sessions).toHaveLength(2);
+    expect(s.port.current.options).toMatchObject({ model: "claude-opus-5-5", effort: "medium" });
+  });
+
+  test("tanpa Pengaturan: model dan effort bawaan", async () => {
+    const s = await setup();
+    s.deliver({ kind: "owner", text: "Buatkan kursi." });
+    expect(s.port.current.options).toMatchObject({ model: "claude-opus-5-5", effort: "high" });
   });
 
   test("aset baru (BRIEFING) tanpa sesi lama: pesan pertama tanpa pembuka", async () => {

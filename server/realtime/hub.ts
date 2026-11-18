@@ -172,8 +172,9 @@ export class Hub {
     if (topic === "global") {
       return bus.subscribeGlobal((event) => {
         if (event.type === "asset") emit({ type: "asset", assetId: event.assetId, change: event.change });
-        else
+        else if (event.type === "progress")
           emit({ type: "asset_progress", assetId: event.assetId, stage: event.stage, pct: event.pct }, true);
+        else emit({ type: event.type });
       });
     }
     const assetId = topic.slice("asset:".length);

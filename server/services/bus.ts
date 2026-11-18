@@ -8,12 +8,15 @@ import type { BuildStage } from "../../shared/asset-list.ts";
 import type { AssetChange } from "../../shared/realtime.ts";
 
 /**
- * Topik `global` untuk Gudang: daftar aset berubah, atau progres build yang sedang berjalan (live, boleh dibuang saat
- * sambungan padat; nilai terakhir juga ada di daftar aset).
+ * Topik `global`: daftar aset berubah, progres build yang sedang berjalan (live, boleh dibuang saat sambungan padat;
+ * nilai terakhir juga ada di daftar aset), Pengaturan disimpan, atau status runtime berubah.
  */
 export type GlobalEvent =
   | Readonly<{ type: "asset"; assetId: string; change: AssetChange }>
-  | Readonly<{ type: "progress"; assetId: string; stage: BuildStage; pct: number }>;
+  | Readonly<{ type: "progress"; assetId: string; stage: BuildStage; pct: number }>
+  | Readonly<{ type: "settings" }>
+  | Readonly<{ type: "runtime" }>
+  | Readonly<{ type: "auth" }>;
 
 export class EventBus {
   readonly #listeners = new Map<string, Set<(event: StoredEvent) => void>>();

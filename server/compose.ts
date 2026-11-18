@@ -6,6 +6,7 @@
  */
 import { mkdir } from "node:fs/promises";
 import { join } from "node:path";
+import { AccountProbe } from "./agent/account.ts";
 import { createAssetSession } from "./agent/asset-session.ts";
 import { type AssetBuilder, DockerAssetBuilder } from "./agent/forge/builder.ts";
 import { FIXTURE_PAIR, FixtureAssetBuilder } from "./agent/forge/fixture-builder.ts";
@@ -21,13 +22,15 @@ import { MaterialLibrary } from "./library/materials.ts";
 import type { Logger } from "./log.ts";
 import { Hub } from "./realtime/hub.ts";
 import { Renderer } from "./render/renderer.ts";
-import { ownerForDataDir } from "./runtime/docker.ts";
-import { runtimeImageTag } from "./runtime/image.ts";
+import { buildImage, dockerServerVersion, imageExists, ownerForDataDir } from "./runtime/docker.ts";
+import { blenderVersion, RUNTIME_DIR, runtimeImageTag } from "./runtime/image.ts";
 import { AssetQueries } from "./services/asset-queries.ts";
 import type { Clock } from "./services/asset-store.ts";
 import { AssetService } from "./services/assets.ts";
 import { EventBus } from "./services/bus.ts";
 import { ExportService } from "./services/exports.ts";
+import { RuntimeStatusService } from "./services/runtime-status.ts";
+import { SettingsService } from "./services/settings.ts";
 import { ThumbnailService } from "./services/thumbnails.ts";
 
 export type ServicesOptions = Readonly<{
@@ -50,6 +53,12 @@ export type Services = Readonly<{
   thumbnails: ThumbnailService;
   /** Ekspor Web/Unity/Sumber dan ZIP Gudang. */
   exports: ExportService;
+  /** Pengaturan: model/effort sesi Claude berikutnya, tier bawaan, budget aset baru. */
+  settings: SettingsService;
+  /** `/api/health/auth`: sesi login Claude dan daftar model (cache 10 menit). */
+  account: AccountProbe;
+  /** `/api/health/runtime` dan aksi "Bangun image". */
+  runtime: RuntimeStatusService;
   lane: HeavyLane;
   /** Sambungan WebSocket ditutup, sesi Claude ditutup, build dibatalkan, Chromium ditutup. Database ditutup pemanggil. */
   close(): Promise<void>;
@@ -114,13 +123,58 @@ export async function createServices(options: ServicesOptions): Promise<Services
       ),
   });
 
+  const account = new AccountProbe({
+    port,
+    pool,
+    now,
+    onError: (error) => log.warn({ err: error }, "pemeriksaan akun Claude gagal"),
+  });
+  const settings = new SettingsService({
+    db,
+    now,
+    bus,
+    knownModels: () => {
+      const status = account.cached;
+      return status?.state === "ok"
+        ? status.models.map(({ value, resolvedModel, efforts }) => ({
+            value,
+            resolvedModel,
+            supportedEffortLevels: efforts,
+          }))
+        : null;
+    },
+    onInvalid: (error) => log.warn({ err: error }, "pengaturan tersimpan tidak valid, memakai bawaan"),
+  });
+  const runtimeStatus = new RuntimeStatusService({
+    driver: config.runtimeDriver,
+    now,
+    bus,
+    checks: {
+      dockerVersion: dockerServerVersion,
+      imageTag: () => runtimeImageTag(),
+      imageExists,
+      blenderVersion: () => blenderVersion(),
+      rendererInfo: runtime.renderer === null ? null : runtime.renderer.rendererInfo.bind(runtime.renderer),
+      materialsCount: async () => (await library.catalog())?.materials.length ?? 0,
+      buildImage: (tag, signal) => buildImage(RUNTIME_DIR, tag, { signal, output: "capture" }),
+    },
+    onError: (error, op) => log.warn({ err: error, op }, "cek runtime gagal"),
+  });
+
   const assets = new AssetService({
     db,
     bus,
     now,
     dataDir: config.dataDir,
+    tierBudget: (tierId) => settings.tierBudget(tierId),
+    runtimeReady: async () => (await runtimeStatus.status()).ready,
+    onAuthRequired: () => {
+      account.invalidate();
+      bus.publishGlobal({ type: "auth" });
+    },
     createAgent: (input) =>
       createAssetSession({
+        agentSettings: () => settings.agent(),
         asset: input.asset,
         store: input.store,
         port,
@@ -171,10 +225,14 @@ export async function createServices(options: ServicesOptions): Promise<Services
     pool,
     thumbnails,
     exports,
+    settings,
+    account,
+    runtime: runtimeStatus,
     lane,
     async close() {
       hub.stop();
       unsubscribe();
+      await runtimeStatus.close();
       await assets.close();
       await runtime.close();
     },
